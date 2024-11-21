@@ -1,8 +1,9 @@
 import boto3
 import hashlib
-import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
+import os
+import json
 from boto3.dynamodb.conditions import Key
 
 def hash_password(password):
@@ -12,61 +13,65 @@ def lambda_handler(event, context):
     try:
         dynamodb = boto3.resource('dynamodb')
         table_name = os.environ['TABLE_NAME']
+        token_table_name = os.environ['TABLE_TOKENS']
         index_name = os.environ['INDEXLSI1_USERS']  # tenant-email-index
         table = dynamodb.Table(table_name)
-        
-        tenant_id = event['body']['tenant_id']  # Identifica el hotel
-        nombre = event['body']['nombre']
-        email = event['body']['email']
-        password = event['body']['password']
+        token_table = dynamodb.Table(token_table_name)
 
-        if not all([tenant_id, nombre, email, password]):
+        body = json.loads(event['body']) if isinstance(event['body'], str) else event['body']
+        
+        tenant_id = body['tenant_id']
+        email = body['email']
+        password = body['password']
+
+        if not all([tenant_id, email, password]):
             return {
                 'statusCode': 400,
-                'body': {'error': 'Faltan campos requeridos'}
+                'body': json.dumps({'error': 'Faltan campos requeridos'})
             }
 
-        # Verificar si el email ya existe usando el LSI
-        existing_user = table.query(
+        hashed_password = hash_password(password)
+
+        # Buscar al usuario por correo y tenant usando el LSI
+        response = table.query(
             IndexName=index_name,
             KeyConditionExpression=Key('tenant_id').eq(tenant_id) & Key('email').eq(email)
         )
 
-        if existing_user['Items']:
+        if not response['Items'] or response['Items'][0]['password_hash'] != hashed_password:
             return {
-                'statusCode': 400,
-                'body': {'error': 'El email ya está registrado para este hotel'}
+                'statusCode': 403,
+                'body': json.dumps({'error': 'Credenciales inválidas'})
             }
 
-        # Registrar al usuario
-        hashed_password = hash_password(password)
-        user_id = str(uuid.uuid4())  # Generar un identificador único para el usuario
+        user = response['Items'][0]  # Obtener datos del usuario
+        user_id = user['user_id']  # Identificar al usuario
 
-        table.put_item(
+        # Generar un token
+        token = str(uuid.uuid4())
+        expiration = (datetime.now() + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
+
+        token_table.put_item(
             Item={
                 'tenant_id': tenant_id,
+                'token': token,
                 'user_id': user_id,
-                'nombre': nombre,
-                'email': email,
-                'password_hash': hashed_password,
-                'fecha_registro': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                'expiration': expiration
             }
         )
 
         return {
             'statusCode': 200,
-            'body': {'message': 'Usuario registrado con éxito', 'user_id': user_id}
+            'body': json.dumps({'token': token, 'expires': expiration, 'user_id': user_id})
         }
-
     except KeyError as e:
-        # Si falta alguna clave en el JSON
         return {
             'statusCode': 400,
-            'body': {'error': f'Campo requerido no encontrado: {str(e)}'}
+            'body': json.dumps({'error': f'Campo requerido no encontrado: {str(e)}'})
         }
     except Exception as e:
-        print("Error:", str(e))  # Log del error
+        print("Error:", str(e))
         return {
             'statusCode': 500,
-            'body': {'error': 'Error interno del servidor', 'details': str(e)}
+            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
         }
