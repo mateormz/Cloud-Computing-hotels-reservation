@@ -11,7 +11,7 @@ def hash_password(password):
 def lambda_handler(event, context):
     dynamodb = boto3.resource('dynamodb')
     table_name = os.environ['TABLE_NAME']
-    token_table_name = os.environ['TABLE_TOKEN_NAME']
+    token_table_name = os.environ['TABLE_TOKENS']
     index_name = os.environ['INDEXLSI1_USERS']  # tenant-email-index
     table = dynamodb.Table(table_name)
     token_table = dynamodb.Table(token_table_name)
@@ -41,6 +41,9 @@ def lambda_handler(event, context):
             'body': {'error': 'Credenciales inválidas'}
         }
 
+    user = response['Items'][0]  # Obtener datos del usuario
+    user_id = user['user_id']  # Identificar al usuario
+
     # Generar un token
     token = str(uuid.uuid4())
     expiration = (datetime.now() + timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
@@ -49,11 +52,12 @@ def lambda_handler(event, context):
         Item={
             'tenant_id': tenant_id,
             'token': token,
+            'user_id': user_id,
             'expiration': expiration
         }
     )
 
     return {
         'statusCode': 200,
-        'body': {'token': token, 'expires': expiration}
+        'body': {'token': token, 'expires': expiration, 'user_id': user_id}
     }

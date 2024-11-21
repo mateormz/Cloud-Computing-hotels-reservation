@@ -40,7 +40,7 @@ def lambda_handler(event, context):
 
     # Registrar al usuario
     hashed_password = hash_password(password)
-    user_id = str(uuid.uuid4())
+    user_id = str(uuid.uuid4())  # Generar un identificador único para el usuario
 
     table.put_item(
         Item={
