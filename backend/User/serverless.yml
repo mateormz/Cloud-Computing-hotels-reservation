@@ -18,7 +18,7 @@ provider:
 
 functions:
   registerUser:
-    handler: handlers/registerUser.lambda_handler
+    handler: register.lambda_handler
     events:
       - http:
           path: /user/register
@@ -26,7 +26,7 @@ functions:
           cors: true
 
   loginUser:
-    handler: handlers/loginUser.lambda_handler
+    handler: login.lambda_handler
     events:
       - http:
           path: /user/login
@@ -34,7 +34,12 @@ functions:
           cors: true
 
   validateToken:
-    handler: handlers/validateToken.lambda_handler
+    handler: validateToken.lambda_handler
+    events:
+      - http:
+          path: /user/validateToken
+          method: post
+          cors: true
 
 resources:
   Resources:
