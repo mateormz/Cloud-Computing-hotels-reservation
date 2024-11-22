@@ -13,6 +13,8 @@ def lambda_handler(event, context):
                 'body': json.dumps({'error': 'Token no proporcionado'})
             }
 
+        function_name = f"{os.environ['SERVICE_NAME']}-{os.environ['STAGE']}-hotel_validateUserToken"
+
         # Invocar la función de validación de token
         lambda_client = boto3.client('lambda')
         payload_string = json.dumps({
@@ -23,7 +25,7 @@ def lambda_handler(event, context):
         })
 
         invoke_response = lambda_client.invoke(
-            FunctionName="hotel_validateUserToken",
+            FunctionName=function_name,
             InvocationType='RequestResponse',
             Payload=payload_string
         )
