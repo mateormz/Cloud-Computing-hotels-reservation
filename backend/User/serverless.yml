@@ -49,7 +49,7 @@ functions:
     events:
       - http:
           path: /user/getUser
-          method: get
+          method: post
           cors: true
           integration: lambda
 
