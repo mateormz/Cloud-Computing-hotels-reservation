@@ -1,9 +1,8 @@
 import boto3
 import hashlib
-import os
 import uuid
-import json  # Importar para procesar JSON
 from datetime import datetime
+import os
 from boto3.dynamodb.conditions import Key
 
 def hash_password(password):
@@ -15,36 +14,34 @@ def lambda_handler(event, context):
         table_name = os.environ['TABLE_NAME']
         index_name = os.environ['INDEXLSI1_USERS']  # tenant-email-index
         table = dynamodb.Table(table_name)
-        
-        # Convertir el cuerpo a JSON si es un string
-        body = json.loads(event['body']) if isinstance(event['body'], str) else event['body']
-        
-        tenant_id = body['tenant_id']  # Identifica el hotel
-        nombre = body['nombre']
-        email = body['email']
-        password = body['password']
 
+        tenant_id = event['body']['tenant_id']
+        nombre = event['body']['nombre']
+        email = event['body']['email']
+        password = event['body']['password']
+
+        # Validar campos requeridos
         if not all([tenant_id, nombre, email, password]):
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'Faltan campos requeridos'})
+                'body': {'error': 'Faltan campos requeridos'}
             }
 
         # Verificar si el email ya existe usando el LSI
-        existing_user = table.query(
+        response = table.query(
             IndexName=index_name,
             KeyConditionExpression=Key('tenant_id').eq(tenant_id) & Key('email').eq(email)
         )
 
-        if existing_user['Items']:
+        if response['Items']:
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'El email ya está registrado para este hotel'})
+                'body': {'error': 'El email ya está registrado para este hotel'}
             }
 
         # Registrar al usuario
         hashed_password = hash_password(password)
-        user_id = str(uuid.uuid4())  # Generar un identificador único para el usuario
+        user_id = str(uuid.uuid4())
 
         table.put_item(
             Item={
@@ -59,18 +56,16 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'body': json.dumps({'message': 'Usuario registrado con éxito', 'user_id': user_id})
+            'body': {'message': 'Usuario registrado con éxito', 'user_id': user_id}
         }
-
     except KeyError as e:
-        # Si falta alguna clave en el JSON
         return {
             'statusCode': 400,
-            'body': json.dumps({'error': f'Campo requerido no encontrado: {str(e)}'})
+            'body': {'error': f'Campo requerido no encontrado: {str(e)}'}
         }
     except Exception as e:
-        print("Error:", str(e))  # Log del error
+        print("Error:", str(e))
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
+            'body': {'error': 'Error interno del servidor', 'details': str(e)}
         }

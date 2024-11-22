@@ -24,6 +24,7 @@ functions:
           path: /user/register
           method: post
           cors: true
+          integration: lambda  # Integración manual
 
   loginUser:
     handler: login.lambda_handler
@@ -32,6 +33,7 @@ functions:
           path: /user/login
           method: post
           cors: true
+          integration: lambda
 
   validateToken:
     handler: validateToken.lambda_handler
@@ -40,6 +42,7 @@ functions:
           path: /user/validateToken
           method: post
           cors: true
+          integration: lambda
 
 resources:
   Resources:
