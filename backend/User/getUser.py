@@ -23,7 +23,7 @@ def lambda_handler(event, context):
         })
 
         invoke_response = lambda_client.invoke(
-            FunctionName="validateHotelUserToken",
+            FunctionName="hotel_validateUserToken",
             InvocationType='RequestResponse',
             Payload=payload_string
         )
