@@ -9,24 +9,24 @@ provider:
   memorySize: 1024
   timeout: 30
   environment:
-    TABLE_NAME: ${sls:stage}-users
+    TABLE_NAME: ${sls:stage}-hotel-users
     INDEXLSI1_USERS: tenant-email-index
     INDEXGSI1_USERS: email-index
-    TABLE_TOKENS: ${sls:stage}-tokens
+    TABLE_TOKENS: ${sls:stage}-hotel-tokens
     INDEXLSI1_TOKENS: tenant-expiration-index
     INDEXGSI1_TOKENS: token-index
 
 functions:
-  registerUser:
+  registerHotelUser:
     handler: register.lambda_handler
     events:
       - http:
           path: /user/register
           method: post
           cors: true
-          integration: lambda  # Integración manual
+          integration: lambda
 
-  loginUser:
+  loginHotelUser:
     handler: login.lambda_handler
     events:
       - http:
@@ -35,7 +35,7 @@ functions:
           cors: true
           integration: lambda
 
-  validateToken:
+  validateHotelUserToken:
     handler: validateToken.lambda_handler
     events:
       - http:
