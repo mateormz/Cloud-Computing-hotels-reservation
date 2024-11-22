@@ -45,13 +45,13 @@ functions:
           integration: lambda
 
   hotel_getUser:
-  handler: getUser.lambda_handler
-  events:
-    - http:
-        path: /user/getUser
-        method: post
-        cors: true
-        integration: lambda
+    handler: getUser.lambda_handler
+    events:
+      - http:
+          path: /user/getUser
+          method: post
+          cors: true
+          integration: lambda
 
 resources:
   Resources:
