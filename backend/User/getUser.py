@@ -93,7 +93,7 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'body': json.dumps({'user': user})
+            'body': {'user': user}
         }
 
     except KeyError as e:
