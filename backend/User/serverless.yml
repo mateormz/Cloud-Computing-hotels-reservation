@@ -15,6 +15,8 @@ provider:
     TABLE_TOKENS: ${sls:stage}-hotel-tokens
     INDEXLSI1_TOKENS: tenant-expiration-index
     INDEXGSI1_TOKENS: token-index
+    SERVICE_NAME: user-api
+    STAGE: ${sls:stage}
 
 functions:
   hotel_registerUser:
