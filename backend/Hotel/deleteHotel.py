@@ -19,7 +19,7 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'body': {'message': 'Hotel eliminado con éxito'}
+            'body': {'message': 'Hotel eliminado exitosamente'}
         }
     except Exception as e:
         return {
