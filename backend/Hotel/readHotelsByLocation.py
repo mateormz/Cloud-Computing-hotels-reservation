@@ -10,7 +10,11 @@ def lambda_handler(event, context):
         # Conexión con DynamoDB
         dynamodb = boto3.resource('dynamodb')
         table_name = os.environ['TABLE_HOTELS']
+        print("Nombre de la tabla DynamoDB:", table_name)
+
         index_name = 'location-index'
+        print("Nombre del índice GSI para location:", index_name)
+
         table = dynamodb.Table(table_name)
 
         # Verificar que queryStringParameters exista
@@ -23,6 +27,7 @@ def lambda_handler(event, context):
 
         # Obtener el parámetro location
         location = event['queryStringParameters'].get('location')
+        print("location recibido:", location)
 
         if not location:
             print("Error: El parámetro location no fue proporcionado.")
@@ -31,9 +36,8 @@ def lambda_handler(event, context):
                 'body': {'error': 'El parámetro location es obligatorio'}
             }
 
-        print("location recibido:", location)
-
         # Consultar DynamoDB por ubicación
+        print(f"Consultando DynamoDB en el índice '{index_name}' por location: {location}")
         response = table.query(
             IndexName=index_name,
             KeyConditionExpression=Key('location').eq(location)
@@ -41,11 +45,13 @@ def lambda_handler(event, context):
         print("Respuesta de DynamoDB:", response)
 
         if not response.get('Items'):
+            print(f"No se encontraron hoteles para la ubicación: {location}")
             return {
                 'statusCode': 404,
                 'body': {'error': 'No se encontraron hoteles en la ubicación proporcionada'}
             }
 
+        print(f"Hoteles encontrados para la ubicación {location}: {response['Items']}")
         return {
             'statusCode': 200,
             'body': {'hotels': response['Items']}
