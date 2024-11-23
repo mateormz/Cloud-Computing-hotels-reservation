@@ -1,6 +1,7 @@
 import boto3
-import os
+import uuid
 from datetime import datetime
+import os
 
 def lambda_handler(event, context):
     try:
@@ -18,9 +19,12 @@ def lambda_handler(event, context):
                 'body': {'error': 'Faltan campos requeridos'}
             }
 
+        hotel_id = str(uuid.uuid4())
+
         table.put_item(
             Item={
                 'tenant_id': tenant_id,
+                'hotel_id': hotel_id,
                 'hotel_name': hotel_name,
                 'location': location,
                 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -29,7 +33,7 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'body': {'message': 'Hotel creado con éxito', 'tenant_id': tenant_id}
+            'body': {'message': 'Hotel creado con éxito', 'hotel_id': hotel_id}
         }
     except Exception as e:
         return {

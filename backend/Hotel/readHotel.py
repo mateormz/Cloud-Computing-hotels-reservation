@@ -8,9 +8,13 @@ def lambda_handler(event, context):
         table = dynamodb.Table(table_name)
 
         tenant_id = event['pathParameters']['tenant_id']
+        hotel_id = event['pathParameters']['hotel_id']
 
         response = table.get_item(
-            Key={'tenant_id': tenant_id}
+            Key={
+                'tenant_id': tenant_id,
+                'hotel_id': hotel_id
+            }
         )
 
         if 'Item' not in response:

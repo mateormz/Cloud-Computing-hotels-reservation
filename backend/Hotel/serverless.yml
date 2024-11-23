@@ -29,7 +29,7 @@ functions:
     handler: readHotel.lambda_handler
     events:
       - http:
-          path: /hotel/{tenant_id}
+          path: /hotel/{tenant_id}/{hotel_id}
           method: get
           cors: true
           integration: lambda
@@ -38,7 +38,7 @@ functions:
     handler: updateHotel.lambda_handler
     events:
       - http:
-          path: /hotel/{tenant_id}
+          path: /hotel/{tenant_id}/{hotel_id}
           method: put
           cors: true
           integration: lambda
@@ -47,7 +47,7 @@ functions:
     handler: deleteHotel.lambda_handler
     events:
       - http:
-          path: /hotel/{tenant_id}
+          path: /hotel/{tenant_id}/{hotel_id}
           method: delete
           cors: true
           integration: lambda
@@ -79,6 +79,8 @@ resources:
         AttributeDefinitions:
           - AttributeName: tenant_id
             AttributeType: S
+          - AttributeName: hotel_id
+            AttributeType: S
           - AttributeName: hotel_name
             AttributeType: S
           - AttributeName: location
@@ -86,6 +88,8 @@ resources:
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
+          - AttributeName: hotel_id
+            KeyType: RANGE
         LocalSecondaryIndexes:
           - IndexName: ${self:provider.environment.INDEXLSI1_HOTELS}
             KeySchema:
