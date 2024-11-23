@@ -12,7 +12,7 @@ def lambda_handler(event, context):
         table_name = os.environ['TABLE_HOTELS']
         print("Nombre de la tabla DynamoDB:", table_name)
 
-        index_name = 'location-index'
+        index_name = 'hotel_location-index'
         print("Nombre del índice GSI para location:", index_name)
 
         table = dynamodb.Table(table_name)
