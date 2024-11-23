@@ -13,16 +13,8 @@ def lambda_handler(event, context):
 
         table = dynamodb.Table(table_name)
 
-        # Verificar que pathParameters exista y obtener valores
-        if 'pathParameters' not in event or not event['pathParameters']:
-            print("Error: pathParameters no está presente o está vacío.")
-            return {
-                'statusCode': 400,
-                'body': {'error': 'Parámetros de la ruta no proporcionados'}
-            }
-
-        tenant_id = event['pathParameters'].get('tenant_id')
-        hotel_id = event['pathParameters'].get('hotel_id')
+        tenant_id = event['path'].get('tenant_id')
+        hotel_id = event['path'].get('hotel_id')
 
         print("tenant_id recibido:", tenant_id)
         print("hotel_id recibido:", hotel_id)

@@ -7,8 +7,8 @@ def lambda_handler(event, context):
         table_name = os.environ['TABLE_HOTELS']
         table = dynamodb.Table(table_name)
 
-        tenant_id = event['pathParameters']['tenant_id']
-        hotel_id = event['pathParameters']['hotel_id']
+        tenant_id = event['path']['tenant_id']
+        hotel_id = event['path']['hotel_id']
         updates = event['body']
 
         update_expression = "SET " + ", ".join(f"{key} = :{key}" for key in updates.keys())
