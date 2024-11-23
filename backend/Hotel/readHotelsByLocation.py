@@ -12,38 +12,46 @@ def lambda_handler(event, context):
         table_name = os.environ['TABLE_HOTELS']
         print("Nombre de la tabla DynamoDB:", table_name)
 
-        index_name = 'hotel_location-index'
-        print("Nombre del índice GSI para location:", index_name)
+        index_name = os.environ['INDEXGSI1_HOTELS']
+        print("Nombre del índice GSI:", index_name)
 
         table = dynamodb.Table(table_name)
 
-        # Obtener el parámetro location
-        location = event['query'].get('location')
-        print("location recibido:", location)
-
-        if not location:
-            print("Error: El parámetro location no fue proporcionado.")
+        # Verificar que queryStringParameters exista
+        if 'queryStringParameters' not in event or not event['queryStringParameters']:
+            print("Error: queryStringParameters no está presente o está vacío.")
             return {
                 'statusCode': 400,
-                'body': {'error': 'El parámetro location es obligatorio'}
+                'body': {'error': 'No se proporcionaron parámetros de consulta'}
             }
 
-        # Consultar DynamoDB por ubicación
-        print(f"Consultando DynamoDB en el índice '{index_name}' por location: {location}")
+        # Obtener el parámetro hotel_location
+        hotel_location = event['queryStringParameters'].get('hotel_location')
+        print("hotel_location recibido:", hotel_location)
+
+        if not hotel_location:
+            print("Error: El parámetro hotel_location no fue proporcionado.")
+            return {
+                'statusCode': 400,
+                'body': {'error': 'El parámetro hotel_location es obligatorio'}
+            }
+
+        # Consultar DynamoDB por hotel_location
+        print(f"Consultando DynamoDB en el índice '{index_name}' por hotel_location: {hotel_location}")
         response = table.query(
             IndexName=index_name,
-            KeyConditionExpression=Key('location').eq(location)
+            KeyConditionExpression=Key('hotel_location').eq(hotel_location)
         )
         print("Respuesta de DynamoDB:", response)
 
         if not response.get('Items'):
-            print(f"No se encontraron hoteles para la ubicación: {location}")
+            print(f"No se encontraron hoteles para la ubicación: {hotel_location}")
             return {
                 'statusCode': 404,
                 'body': {'error': 'No se encontraron hoteles en la ubicación proporcionada'}
             }
 
-        print(f"Hoteles encontrados para la ubicación {location}: {response['Items']}")
+        print(f"Hoteles encontrados para la ubicación {hotel_location}: {response['Items']}")
         return {
             'statusCode': 200,
             'body': {'hotels': response['Items']}
