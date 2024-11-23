@@ -17,16 +17,8 @@ def lambda_handler(event, context):
 
         table = dynamodb.Table(table_name)
 
-        # Verificar que queryStringParameters exista
-        if 'queryStringParameters' not in event or not event['queryStringParameters']:
-            print("Error: queryStringParameters no está presente o está vacío.")
-            return {
-                'statusCode': 400,
-                'body': {'error': 'No se proporcionaron parámetros de consulta'}
-            }
-
         # Obtener el parámetro hotel_location
-        hotel_location = event['queryStringParameters'].get('hotel_location')
+        hotel_location = event['query'].get('hotel_location')
         print("hotel_location recibido:", hotel_location)
 
         if not hotel_location:
