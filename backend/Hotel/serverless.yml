@@ -11,7 +11,7 @@ provider:
   environment:
     TABLE_HOTELS: ${sls:stage}-hotel-hotels
     INDEXLSI1_HOTELS: tenant-name-index
-    INDEXGSI1_HOTELS: location-index
+    INDEXGSI1_HOTELS: hotel_location-index
     SERVICE_NAME: hotel-api
     STAGE: ${sls:stage}
 
@@ -83,7 +83,7 @@ resources:
             AttributeType: S
           - AttributeName: hotel_name
             AttributeType: S
-          - AttributeName: location
+          - AttributeName: hotel_location
             AttributeType: S
         KeySchema:
           - AttributeName: tenant_id
@@ -102,7 +102,7 @@ resources:
         GlobalSecondaryIndexes:
           - IndexName: ${self:provider.environment.INDEXGSI1_HOTELS}
             KeySchema:
-              - AttributeName: location
+              - AttributeName: hotel_location
                 KeyType: HASH
               - AttributeName: tenant_id
                 KeyType: RANGE

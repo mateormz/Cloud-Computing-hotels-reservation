@@ -11,9 +11,9 @@ def lambda_handler(event, context):
 
         tenant_id = event['body']['tenant_id']
         hotel_name = event['body']['hotel_name']
-        location = event['body']['location']
+        hotel_location = event['body']['hotel_location']
 
-        if not all([tenant_id, hotel_name, location]):
+        if not all([tenant_id, hotel_name, hotel_location]):
             return {
                 'statusCode': 400,
                 'body': {'error': 'Faltan campos requeridos'}
@@ -26,7 +26,7 @@ def lambda_handler(event, context):
                 'tenant_id': tenant_id,
                 'hotel_id': hotel_id,
                 'hotel_name': hotel_name,
-                'location': location,
+                'hotel_location': hotel_location,
                 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
         )
