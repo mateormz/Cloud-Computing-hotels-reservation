@@ -1,0 +1,109 @@
+org: mateormz
+service: hotel-api
+
+provider:
+  name: aws
+  runtime: python3.9
+  iam:
+    role: arn:aws:iam::637423324074:role/LabRole
+  memorySize: 1024
+  timeout: 30
+  environment:
+    TABLE_HOTELS: ${sls:stage}-hotel-hotels
+    INDEXLSI1_HOTELS: tenant-name-index
+    INDEXGSI1_HOTELS: location-index
+    SERVICE_NAME: hotel-api
+    STAGE: ${sls:stage}
+
+functions:
+  hotel_create:
+    handler: createHotel.lambda_handler
+    events:
+      - http:
+          path: /hotel/create
+          method: post
+          cors: true
+          integration: lambda
+
+  hotel_read:
+    handler: readHotel.lambda_handler
+    events:
+      - http:
+          path: /hotel/{tenant_id}
+          method: get
+          cors: true
+          integration: lambda
+
+  hotel_update:
+    handler: updateHotel.lambda_handler
+    events:
+      - http:
+          path: /hotel/{tenant_id}
+          method: put
+          cors: true
+          integration: lambda
+
+  hotel_delete:
+    handler: deleteHotel.lambda_handler
+    events:
+      - http:
+          path: /hotel/{tenant_id}
+          method: delete
+          cors: true
+          integration: lambda
+
+  hotel_getAll:
+    handler: getAllHotels.lambda_handler
+    events:
+      - http:
+          path: /hotels
+          method: get
+          cors: true
+          integration: lambda
+
+  hotel_readByLocation:
+    handler: readHotelsByLocation.lambda_handler
+    events:
+      - http:
+          path: /hotels/location
+          method: get
+          cors: true
+          integration: lambda
+
+resources:
+  Resources:
+    HotelsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_HOTELS}
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: hotel_name
+            AttributeType: S
+          - AttributeName: location
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH
+        LocalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.INDEXLSI1_HOTELS}
+            KeySchema:
+              - AttributeName: tenant_id
+                KeyType: HASH
+              - AttributeName: hotel_name
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.INDEXGSI1_HOTELS}
+            KeySchema:
+              - AttributeName: location
+                KeyType: HASH
+              - AttributeName: tenant_id
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
