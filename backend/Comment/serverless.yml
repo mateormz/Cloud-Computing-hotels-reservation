@@ -70,12 +70,14 @@ resources:
             AttributeType: S
           - AttributeName: room_id
             AttributeType: S
+          - AttributeName: comment_id
+            AttributeType: S
           - AttributeName: user_id
             AttributeType: S
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
-          - AttributeName: room_id
+          - AttributeName: comment_id
             KeyType: RANGE
         LocalSecondaryIndexes:
           - IndexName: user-comment-index
