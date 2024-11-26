@@ -18,17 +18,17 @@ def lambda_handler(event, context):
                 'body': json.dumps({'error': 'Token no proporcionado'})
             }
 
-        # Invocación de la función para validar el token
+        # Invocar la función de validación de token
         function_name = f"{os.environ['SERVICE_NAME']}-{os.environ['STAGE']}-hotel_validateUserToken"
         print("Nombre de la función de validación de token:", function_name)
-        
+
         payload_string = json.dumps({
             "body": {
                 "token": token,
                 "tenant_id": "global"
             }
         })
-        print("Payload para validar token:", payload_string)
+        print("Payload enviado a validateUserToken:", payload_string)
 
         lambda_client = boto3.client('lambda')
         invoke_response = lambda_client.invoke(
@@ -37,48 +37,65 @@ def lambda_handler(event, context):
             Payload=payload_string
         )
         response = json.loads(invoke_response['Payload'].read())
-        print("Respuesta de validación de token:", response)
+        print("Respuesta de validateUserToken:", response)
 
         if response['statusCode'] != 200:
-            print("Error en la validación de token:", response)
+            print("Error en validación de token:", response)
             return {
                 'statusCode': response['statusCode'],
                 'body': response['body']
             }
 
-        # Token válido, continuar con la operación
+        # Continuar con DynamoDB
         dynamodb = boto3.resource('dynamodb')
         table_name = os.environ['TABLE_COMMENTS']
         print("Nombre de la tabla DynamoDB:", table_name)
         table = dynamodb.Table(table_name)
 
         tenant_id = event['path']['tenant_id']
+        room_id = event['path']['room_id']
         comment_id = event['path']['comment_id']
-        print("Claves proporcionadas:", {
+        print("Datos proporcionados:", {
             "tenant_id": tenant_id,
+            "room_id": room_id,
             "comment_id": comment_id
         })
 
-        # Convertir event['body'] de JSON a diccionario
-        if isinstance(event['body'], str):  # Si es una cadena JSON
+        # Obtener el comentario para verificar `comment_id`
+        result = table.get_item(
+            Key={
+                'tenant_id': tenant_id,
+                'room_id': room_id
+            }
+        )
+        print("Resultado de DynamoDB get_item:", result)
+
+        if 'Item' not in result or result['Item'].get('comment_id') != comment_id:
+            print("Error: Comentario no encontrado o `comment_id` no coincide")
+            return {
+                'statusCode': 404,
+                'body': json.dumps({'error': 'Comentario no encontrado'})
+            }
+
+        # Convertir `body` a diccionario
+        if isinstance(event['body'], str):  # Si el cuerpo es una cadena JSON
             updates = json.loads(event['body'])
-        else:  # Ya es un diccionario
+        else:  # Si ya es un diccionario
             updates = event['body']
-        
-        print("Datos recibidos para actualizar:", updates)
+        print("Datos recibidos para actualización:", updates)
 
         if 'comment_text' not in updates:
-            print("Error: No se proporcionó 'comment_text'")
+            print("Error: No se proporcionó `comment_text`")
             return {
                 'statusCode': 400,
                 'body': json.dumps({'error': 'No se proporcionó texto de comentario para actualizar'})
             }
 
-        # Actualización en la tabla DynamoDB
+        # Actualizar el comentario en DynamoDB
         response = table.update_item(
             Key={
                 'tenant_id': tenant_id,
-                'comment_id': comment_id
+                'room_id': room_id
             },
             UpdateExpression="SET comment_text = :comment_text",
             ExpressionAttributeValues={
