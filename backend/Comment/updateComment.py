@@ -36,39 +36,39 @@ def lambda_handler(event, context):
 
         # Token válido, continuar con la operación
         dynamodb = boto3.resource('dynamodb')
-        table_name = os.environ['TABLE_NAME']
+        table_name = os.environ['TABLE_COMMENTS']
         table = dynamodb.Table(table_name)
 
         tenant_id = event['path']['tenant_id']
+        room_id = event['path']['room_id']
         comment_id = event['path']['comment_id']
+        updates = event['body']
 
-        # Validar cuerpo de la solicitud
-        body = json.loads(event['body'])
-        if 'comment_text' not in body:
+        if 'comment_text' not in updates:
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'No se proporcionó `comment_text`'})
+                'body': {'error': 'No se proporcionó texto de comentario para actualizar'}
             }
 
-        # Actualizar el comentario en DynamoDB
         response = table.update_item(
             Key={
                 'tenant_id': tenant_id,
+                'room_id': room_id,
                 'comment_id': comment_id
             },
             UpdateExpression="SET comment_text = :comment_text",
             ExpressionAttributeValues={
-                ":comment_text": body['comment_text']
+                ":comment_text": updates['comment_text']
             },
             ReturnValues="ALL_NEW"
         )
 
         return {
             'statusCode': 200,
-            'body': json.dumps({'message': 'Comentario actualizado con éxito', 'updated': response['Attributes']})
+            'body': {'message': 'Comentario actualizado con éxito', 'updated': response['Attributes']}
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
+            'body': {'error': 'Error interno del servidor', 'details': str(e)}
         }
