@@ -12,8 +12,8 @@ def lambda_handler(event, context):
         tenant_id = event['body']['tenant_id']
         room_name = event['body']['room_name']
         max_persons = event['body']['max_persons']
-        room_type = event['body']['room_type']  # Ejemplo: simple, doble, suite
-        price_per_night = event['body']['price_per_night']  # Precio por noche
+        room_type = event['body']['room_type']
+        price_per_night = event['body']['price_per_night']
 
         if not all([tenant_id, room_name, max_persons, room_type, price_per_night]):
             return {
@@ -31,8 +31,7 @@ def lambda_handler(event, context):
                 'max_persons': max_persons,
                 'room_type': room_type,
                 'price_per_night': price_per_night,
-                'is_available': True,
-                'is_reserved': False,
+                'availability': 'disponible',  # Inicializa con "disponible"
                 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
         )

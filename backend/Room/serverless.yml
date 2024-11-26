@@ -64,6 +64,7 @@ functions:
           method: get
           cors: true
 
+
 resources:
   Resources:
     RoomsTable:
@@ -77,8 +78,8 @@ resources:
             AttributeType: S
           - AttributeName: room_name
             AttributeType: S
-          - AttributeName: is_available
-            AttributeType: BOOL
+          - AttributeName: availability
+            AttributeType: S  
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
@@ -96,7 +97,7 @@ resources:
         GlobalSecondaryIndexes:
           - IndexName: ${self:provider.environment.INDEXGSI1_ROOMS}
             KeySchema:
-              - AttributeName: is_available
+              - AttributeName: availability
                 KeyType: HASH
               - AttributeName: tenant_id
                 KeyType: RANGE
