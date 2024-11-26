@@ -1,4 +1,3 @@
-
 import boto3
 import uuid
 from datetime import datetime
@@ -39,7 +38,7 @@ def lambda_handler(event, context):
 
         # Token válido, continuar con la operación
         dynamodb = boto3.resource('dynamodb')
-        table_name = os.environ['TABLE_COMMENTS']
+        table_name = os.environ['TABLE_NAME']
         table = dynamodb.Table(table_name)
 
         tenant_id = event['body'].get('tenant_id')
@@ -50,10 +49,11 @@ def lambda_handler(event, context):
         if not all([tenant_id, user_id, room_id, comment_text]):
             return {
                 'statusCode': 400,
-                'body': {'error': 'Faltan campos requeridos'}
+                'body': json.dumps({'error': 'Faltan campos requeridos'})
             }
 
         comment_id = str(uuid.uuid4())
+        created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         table.put_item(
             Item={
                 'tenant_id': tenant_id,
@@ -61,16 +61,16 @@ def lambda_handler(event, context):
                 'comment_id': comment_id,
                 'user_id': user_id,
                 'comment_text': comment_text,
-                'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                'created_at': created_at
             }
         )
 
         return {
             'statusCode': 200,
-            'body': {'message': 'Comentario creado con éxito', 'comment_id': comment_id}
+            'body': json.dumps({'message': 'Comentario creado con éxito', 'comment_id': comment_id})
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': {'error': 'Error interno del servidor', 'details': str(e)}
+            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
         }
