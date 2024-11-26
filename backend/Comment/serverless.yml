@@ -9,7 +9,7 @@ provider:
     SERVICE_NAME: comment-api
     STAGE: ${sls:stage}
   iam:
-    role:  
+    role: arn:aws:iam::418974378390:role/LabRole  
   memorySize: 1024
   timeout: 30
 
