@@ -4,7 +4,7 @@ import os
 
 def lambda_handler(event, context):
     try:
-        # Proteger con validación de token
+        # Validación de token
         token = event['headers'].get('Authorization')
         if not token:
             return {
@@ -41,25 +41,25 @@ def lambda_handler(event, context):
         dynamodb = boto3.resource('dynamodb')
         table_name = os.environ['TABLE_ROOMS']
         table = dynamodb.Table(table_name)
+        index_name = os.environ['INDEXGSI1_ROOMS']
 
-        # Obtener el estado actual de la habitación
-        room = table.get_item(
-            Key={
-                'tenant_id': tenant_id,
-                'room_id': room_id
-            }
-        ).get('Item')
+        # Obtener la disponibilidad actual usando el GSI
+        response = table.query(
+            IndexName=index_name,
+            KeyConditionExpression=Key('availability').eq('disponible') & Key('tenant_id').eq(tenant_id)
+        )
+        room = next((r for r in response.get('Items', []) if r['room_id'] == room_id), None)
 
         if not room:
             return {
                 'statusCode': 404,
-                'body': {'error': 'Habitación no encontrada'}
+                'body': {'error': 'Habitación no encontrada o no disponible'}
             }
 
         # Cambiar entre "disponible" y "reservado"
         new_availability = 'reservado' if room['availability'] == 'disponible' else 'disponible'
 
-        response = table.update_item(
+        update_response = table.update_item(
             Key={
                 'tenant_id': tenant_id,
                 'room_id': room_id
@@ -73,7 +73,7 @@ def lambda_handler(event, context):
             'statusCode': 200,
             'body': {
                 'message': 'Estado de disponibilidad actualizado',
-                'updated': response['Attributes']
+                'updated': update_response['Attributes']
             }
         }
     except Exception as e:

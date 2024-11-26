@@ -56,7 +56,7 @@ def lambda_handler(event, context):
 
         # Respuesta de éxito
         return {
-            'statusCode': 200,
+            'statusCode': 200, 
             'body': {'message': 'Habitación creada con éxito', 'room_id': room_id}
         }
 

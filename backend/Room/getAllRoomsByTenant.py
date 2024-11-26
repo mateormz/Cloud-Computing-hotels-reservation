@@ -5,7 +5,7 @@ import os
 
 def lambda_handler(event, context):
     try:
-        # Proteger con validación de token
+        # Validación de token
         token = event['headers'].get('Authorization')
         if not token:
             return {
@@ -41,8 +41,11 @@ def lambda_handler(event, context):
         dynamodb = boto3.resource('dynamodb')
         table_name = os.environ['TABLE_ROOMS']
         table = dynamodb.Table(table_name)
+        index_name = os.environ['INDEXLSI1_ROOMS']
 
+        # Consulta optimizada usando el LSI
         response = table.query(
+            IndexName=index_name,
             KeyConditionExpression=Key('tenant_id').eq(tenant_id)
         )
 

@@ -4,7 +4,7 @@ import os
 
 def lambda_handler(event, context):
     try:
-        # Proteger con validación de token
+        # Validación de token
         token = event['headers'].get('Authorization')
         if not token:
             return {
@@ -39,8 +39,13 @@ def lambda_handler(event, context):
         dynamodb = boto3.resource('dynamodb')
         table_name = os.environ['TABLE_ROOMS']
         table = dynamodb.Table(table_name)
+        index_name = os.environ['INDEXGSI1_ROOMS']
 
-        response = table.scan()  # Permitido porque estamos obteniendo todas las habitaciones
+        # Consulta usando el índice GSI
+        response = table.query(
+            IndexName=index_name,
+            KeyConditionExpression=Key('availability').eq('disponible')
+        )
 
         return {
             'statusCode': 200,
