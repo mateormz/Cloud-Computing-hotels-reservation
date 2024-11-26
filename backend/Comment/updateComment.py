@@ -53,11 +53,9 @@ def lambda_handler(event, context):
         table = dynamodb.Table(table_name)
 
         tenant_id = event['path']['tenant_id']
-        room_id = event['path']['room_id']
         comment_id = event['path']['comment_id']
         print("Claves proporcionadas:", {
             "tenant_id": tenant_id,
-            "room_id": room_id,
             "comment_id": comment_id
         })
 
@@ -80,7 +78,6 @@ def lambda_handler(event, context):
         response = table.update_item(
             Key={
                 'tenant_id': tenant_id,
-                'room_id': room_id,
                 'comment_id': comment_id
             },
             UpdateExpression="SET comment_text = :comment_text",
