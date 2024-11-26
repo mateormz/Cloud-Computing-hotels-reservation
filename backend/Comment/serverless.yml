@@ -1,11 +1,11 @@
-org: joelm2405
+org: lopezluis17
 service: comment-api
 
 provider:
   name: aws
   runtime: python3.9
   iam:
-    role: arn:aws:iam::187978737113:role/LabRole
+    role: arn:aws:iam::418974378390:role/LabRole
   memorySize: 1024
   timeout: 30
   environment:
