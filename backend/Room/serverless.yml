@@ -25,7 +25,6 @@ functions:
           cors: true
           integration: lambda
           
-
   room_update:
     handler: updateRoom.lambda_handler
     events:
@@ -71,6 +70,15 @@ functions:
           cors: true
           integration: lambda
 
+  # Nueva función para obtener una habitación por su ID
+  room_getById:
+    handler: getRoomById.lambda_handler
+    events:
+      - http:
+          path: /room/{tenant_id}/{room_id}
+          method: get
+          cors: true
+          integration: lambda
 
 resources:
   Resources:

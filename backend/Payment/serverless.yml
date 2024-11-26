@@ -1,0 +1,148 @@
+org: joelm2405
+service: payment-api
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  iam:
+    role: arn:aws:iam::187978737113:role/LabRole
+  memorySize: 1024
+  timeout: 30
+  environment:
+    TABLE_PAYMENTS: ${sls:stage}-hotel-payments
+    TABLE_RESERVATIONS: ${sls:stage}-hotel-reservations # Asegúrate de tener la tabla de reservas configurada
+    SERVICE_NAME: room-api
+    STAGE: ${sls:stage}
+
+functions:
+  payment_create:
+    handler: handler.createPayment
+    events:
+      - http:
+          path: /payment/create
+          method: post
+          cors: true
+          integration: lambda
+
+  payment_getAll:
+    handler: handler.getAllPayments
+    events:
+      - http:
+          path: /payments/all
+          method: get
+          cors: true
+          integration: lambda
+
+  payment_getByUserAndTenant:
+    handler: handler.getPaymentsByUserAndTenant
+    events:
+      - http:
+          path: /payments/{tenant_id}/user/{user_id}
+          method: get
+          cors: true
+          integration: lambda
+
+  payment_getById:
+    handler: handler.getPaymentById
+    events:
+      - http:
+          path: /payment/{tenant_id}/{payment_id}
+          method: get
+          cors: true
+          integration: lambda
+
+  payment_delete:
+    handler: handler.deletePayment
+    events:
+      - http:
+          path: /payment/{tenant_id}/{payment_id}
+          method: delete
+          cors: true
+          integration: lambda
+
+resources:
+  Resources:
+    PaymentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_PAYMENTS}
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: payment_id
+            AttributeType: S
+          - AttributeName: user_id
+            AttributeType: S
+          - AttributeName: reserva_id
+            AttributeType: S
+          - AttributeName: status
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH
+          - AttributeName: payment_id
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        GlobalSecondaryIndexes:
+          - IndexName: user-id-tenant-id-index
+            KeySchema:
+              - AttributeName: user_id
+                KeyType: HASH
+              - AttributeName: tenant_id
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+          - IndexName: reserva-id-status-index
+            KeySchema:
+              - AttributeName: reserva_id
+                KeyType: HASH
+              - AttributeName: status
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+        BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+
+    ReservationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_RESERVATIONS}
+        AttributeDefinitions:
+          - AttributeName: reserva_id
+            AttributeType: S
+          - AttributeName: room_id
+            AttributeType: S
+          - AttributeName: tenant_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: reserva_id
+            KeyType: HASH
+          - AttributeName: tenant_id
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        GlobalSecondaryIndexes:
+          - IndexName: room-id-index
+            KeySchema:
+              - AttributeName: room_id
+                KeyType: HASH
+              - AttributeName: tenant_id
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+        BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
