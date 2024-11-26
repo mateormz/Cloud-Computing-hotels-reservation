@@ -1,3 +1,4 @@
+
 import boto3
 from boto3.dynamodb.conditions import Key
 import os
@@ -37,23 +38,22 @@ def lambda_handler(event, context):
 
         # Token válido, continuar con la operación
         dynamodb = boto3.resource('dynamodb')
-        table_name = os.environ['TABLE_NAME']
+        table_name = os.environ['TABLE_COMMENTS']
         table = dynamodb.Table(table_name)
 
         tenant_id = event['path']['tenant_id']
         room_id = event['path']['room_id']
 
         response = table.query(
-            IndexName='tenant-room-index',
             KeyConditionExpression=Key('tenant_id').eq(tenant_id) & Key('room_id').eq(room_id)
         )
 
         return {
             'statusCode': 200,
-            'body': json.dumps({'comments': response.get('Items', [])})
+            'body': {'comments': response.get('Items', [])}
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
+            'body': {'error': 'Error interno del servidor', 'details': str(e)}
         }
