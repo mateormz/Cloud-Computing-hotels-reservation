@@ -26,8 +26,11 @@ def lambda_handler(event, context):
         tenant_id = event['path']['tenant_id']
         room_id = event['path']['room_id']
         comment_id = event['path']['comment_id']
-        updates = json.loads(event['body'])
-        print("Parámetros recibidos - tenant_id:", tenant_id, "room_id:", room_id, "comment_id:", comment_id, "updates:", updates)
+        print("Parámetros recibidos - tenant_id:", tenant_id, "room_id:", room_id, "comment_id:", comment_id)
+
+        # Leer el cuerpo correctamente
+        updates = json.loads(event['body']) if isinstance(event['body'], str) else event['body']
+        print("Cuerpo de la solicitud:", updates)
 
         if 'comment_text' not in updates:
             print("No se proporcionó texto de comentario para actualizar")
