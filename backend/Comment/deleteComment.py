@@ -1,4 +1,3 @@
-
 import boto3
 import os
 import json
@@ -40,24 +39,27 @@ def lambda_handler(event, context):
         table_name = os.environ['TABLE_COMMENTS']
         table = dynamodb.Table(table_name)
 
-        tenant_id = event['path']['tenant_id']
-        room_id = event['path']['room_id']
-        comment_id = event['path']['comment_id']
+        tenant_id = event['pathParameters']['tenant_id']
+        room_id = event['pathParameters']['room_id']
+        comment_id = event['pathParameters']['comment_id']
 
         table.delete_item(
             Key={
                 'tenant_id': tenant_id,
-                'room_id': room_id,
-                'comment_id': comment_id
+                'room_id': room_id
+            },
+            ConditionExpression="comment_id = :comment_id",
+            ExpressionAttributeValues={
+                ":comment_id": comment_id
             }
         )
 
         return {
             'statusCode': 200,
-            'body': {'message': 'Comentario eliminado exitosamente'}
+            'body': json.dumps({'message': 'Comentario eliminado exitosamente'})
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': {'error': 'Error interno del servidor', 'details': str(e)}
+            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
         }
