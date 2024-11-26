@@ -36,27 +36,25 @@ def lambda_handler(event, context):
 
         # Token válido, continuar con la operación
         dynamodb = boto3.resource('dynamodb')
-        table_name = os.environ['TABLE_COMMENTS']
+        table_name = os.environ['TABLE_NAME']
         table = dynamodb.Table(table_name)
 
         tenant_id = event['path']['tenant_id']
-        room_id = event['path']['room_id']
         comment_id = event['path']['comment_id']
 
         table.delete_item(
             Key={
                 'tenant_id': tenant_id,
-                'room_id': room_id,
                 'comment_id': comment_id
             }
         )
 
         return {
             'statusCode': 200,
-            'body': {'message': 'Comentario eliminado exitosamente'}
+            'body': json.dumps({'message': 'Comentario eliminado exitosamente'})
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': {'error': 'Error interno del servidor', 'details': str(e)}
+            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
         }
