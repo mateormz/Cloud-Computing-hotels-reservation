@@ -23,6 +23,8 @@ functions:
           path: /room/create
           method: post
           cors: true
+          integration: lambda
+          
 
   room_update:
     handler: updateRoom.lambda_handler
@@ -31,6 +33,7 @@ functions:
           path: /room/{tenant_id}/{room_id}
           method: put
           cors: true
+          integration: lambda
 
   room_delete:
     handler: deleteRoom.lambda_handler
@@ -39,6 +42,7 @@ functions:
           path: /room/{tenant_id}/{room_id}
           method: delete
           cors: true
+          integration: lambda
 
   room_getAllByTenant:
     handler: getAllRoomsByTenant.lambda_handler
@@ -47,6 +51,7 @@ functions:
           path: /rooms/{tenant_id}
           method: get
           cors: true
+          integration: lambda
 
   room_toggleAvailability:
     handler: toggleAvailability.lambda_handler
@@ -55,6 +60,7 @@ functions:
           path: /room/toggleAvailability/{tenant_id}/{room_id}
           method: post
           cors: true
+          integration: lambda
 
   room_getAll:
     handler: getAllRooms.lambda_handler
@@ -63,6 +69,7 @@ functions:
           path: /rooms/all
           method: get
           cors: true
+          integration: lambda
 
 
 resources:
