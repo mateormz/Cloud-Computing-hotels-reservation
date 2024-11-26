@@ -68,9 +68,9 @@ resources:
         AttributeDefinitions:
           - AttributeName: tenant_id
             AttributeType: S
-          - AttributeName: room_id
-            AttributeType: S
           - AttributeName: comment_id
+            AttributeType: S
+          - AttributeName: room_id
             AttributeType: S
           - AttributeName: user_id
             AttributeType: S
