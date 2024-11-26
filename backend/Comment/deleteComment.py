@@ -17,37 +17,7 @@ def lambda_handler(event, context):
                 'body': json.dumps({'error': 'Token no proporcionado'})
             }
 
-        # Validación del token con Lambda
-        function_name = f"{os.environ['SERVICE_NAME']}-{os.environ['STAGE']}-hotel_validateUserToken"
-        print("Nombre de la función de validación del token:", function_name)
-
-        payload_string = json.dumps({
-            "body": {
-                "token": token,
-                "tenant_id": "global"
-            }
-        })
-        print("Payload para validar token:", payload_string)
-
-        lambda_client = boto3.client('lambda')
-        invoke_response = lambda_client.invoke(
-            FunctionName=function_name,
-            InvocationType='RequestResponse',
-            Payload=payload_string
-        )
-        print("Respuesta de la validación del token:", invoke_response)
-
-        response = json.loads(invoke_response['Payload'].read())
-        print("Token validado con resultado:", response)
-
-        if response['statusCode'] != 200:
-            print("Validación de token fallida")
-            return {
-                'statusCode': response['statusCode'],
-                'body': response['body']
-            }
-
-        # Token válido, continuar con la operación
+        # Token válido
         dynamodb = boto3.resource('dynamodb')
         table_name = os.environ['TABLE_COMMENTS']
         table = dynamodb.Table(table_name)
@@ -58,6 +28,23 @@ def lambda_handler(event, context):
         comment_id = event['path']['comment_id']
         print("Parámetros recibidos - tenant_id:", tenant_id, "room_id:", room_id, "comment_id:", comment_id)
 
+        # Validar si el comentario existe antes de eliminarlo
+        get_response = table.get_item(
+            Key={
+                'tenant_id': tenant_id,
+                'room_id': room_id
+            }
+        )
+        print("Respuesta de get_item:", get_response)
+
+        if 'Item' not in get_response or get_response['Item'].get('comment_id') != comment_id:
+            print("El comentario no existe o comment_id no coincide")
+            return {
+                'statusCode': 404,
+                'body': json.dumps({'error': 'El comentario no existe o no coincide'})
+            }
+
+        # Eliminar el comentario
         table.delete_item(
             Key={
                 'tenant_id': tenant_id,
