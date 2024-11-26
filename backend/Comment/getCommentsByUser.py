@@ -37,23 +37,23 @@ def lambda_handler(event, context):
 
         # Token válido, continuar con la operación
         dynamodb = boto3.resource('dynamodb')
-        table_name = os.environ['TABLE_COMMENTS']
+        table_name = os.environ['TABLE_NAME']
         table = dynamodb.Table(table_name)
 
         tenant_id = event['path']['tenant_id']
         user_id = event['path']['user_id']
 
         response = table.query(
-            IndexName="user-comment-index",
+            IndexName='user-date-index',
             KeyConditionExpression=Key('tenant_id').eq(tenant_id) & Key('user_id').eq(user_id)
         )
 
         return {
             'statusCode': 200,
-            'body': {'comments': response.get('Items', [])}
+            'body': json.dumps({'comments': response.get('Items', [])})
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': {'error': 'Error interno del servidor', 'details': str(e)}
+            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
         }
