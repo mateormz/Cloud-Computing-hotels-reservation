@@ -39,25 +39,26 @@ def lambda_handler(event, context):
         table_name = os.environ['TABLE_COMMENTS']
         table = dynamodb.Table(table_name)
 
-        tenant_id = event['path']['tenant_id']
-        room_id = event['path']['room_id']
-        comment_id = event['path']['comment_id']
-        updates = event['body']
+        tenant_id = event['pathParameters']['tenant_id']
+        room_id = event['pathParameters']['room_id']
+        comment_id = event['pathParameters']['comment_id']
+        updates = json.loads(event['body'])
 
         if 'comment_text' not in updates:
             return {
                 'statusCode': 400,
-                'body': {'error': 'No se proporcionó texto de comentario para actualizar'}
+                'body': json.dumps({'error': 'No se proporcionó texto de comentario para actualizar'})
             }
 
         response = table.update_item(
             Key={
                 'tenant_id': tenant_id,
-                'room_id': room_id,
-                'comment_id': comment_id
+                'room_id': room_id
             },
+            ConditionExpression="comment_id = :comment_id",
             UpdateExpression="SET comment_text = :comment_text",
             ExpressionAttributeValues={
+                ":comment_id": comment_id,
                 ":comment_text": updates['comment_text']
             },
             ReturnValues="ALL_NEW"
@@ -65,10 +66,10 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'body': {'message': 'Comentario actualizado con éxito', 'updated': response['Attributes']}
+            'body': json.dumps({'message': 'Comentario actualizado con éxito', 'updated': response['Attributes']})
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': {'error': 'Error interno del servidor', 'details': str(e)}
+            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
         }
