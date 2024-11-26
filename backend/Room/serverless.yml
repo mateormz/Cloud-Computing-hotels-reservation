@@ -5,7 +5,7 @@ provider:
   name: aws
   runtime: python3.9
   iam:
-    role: arn:aws:iam::187978737113:role/LabRoles
+    role: arn:aws:iam::187978737113:role/LabRole
   memorySize: 1024
   timeout: 30
   environment:
