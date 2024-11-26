@@ -61,14 +61,19 @@ def lambda_handler(event, context):
             "comment_id": comment_id
         })
 
-        updates = json.loads(event['body'])
+        # Convertir event['body'] de JSON a diccionario
+        if isinstance(event['body'], str):  # Si es una cadena JSON
+            updates = json.loads(event['body'])
+        else:  # Ya es un diccionario
+            updates = event['body']
+        
         print("Datos recibidos para actualizar:", updates)
 
         if 'comment_text' not in updates:
             print("Error: No se proporcionó 'comment_text'")
             return {
                 'statusCode': 400,
-                'body': {'error': 'No se proporcionó texto de comentario para actualizar'}
+                'body': json.dumps({'error': 'No se proporcionó texto de comentario para actualizar'})
             }
 
         # Actualización en la tabla DynamoDB
