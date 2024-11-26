@@ -27,7 +27,7 @@ functions:
     handler: getCommentsByRoom.lambda_handler
     events:
       - http:
-          path: comments/rooms/{tenant_id}/{room_id}
+          path: rooms/{tenant_id}/{room_id}/comments
           method: get
           cors: true
           request:
@@ -41,7 +41,7 @@ functions:
     handler: getCommentsByUser.lambda_handler
     events:
       - http:
-          path: comments/users/{tenant_id}/{user_id}
+          path: users/{tenant_id}/{user_id}/comments
           method: get
           cors: true
           request:
@@ -55,7 +55,7 @@ functions:
     handler: updateComment.lambda_handler
     events:
       - http:
-          path: comments/{tenant_id}/{comment_id}
+          path: comments/{tenant_id}/update/{comment_id}
           method: put
           cors: true
           request:
@@ -69,7 +69,7 @@ functions:
     handler: deleteComment.lambda_handler
     events:
       - http:
-          path: comments/{tenant_id}/{comment_id}
+          path: comments/{tenant_id}/delete/{comment_id}
           method: delete
           cors: true
           request:
