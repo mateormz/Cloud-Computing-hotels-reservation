@@ -1,4 +1,5 @@
 import boto3
+from boto3.dynamodb.conditions import Key
 import os
 import json
 
@@ -20,7 +21,7 @@ def lambda_handler(event, context):
         payload_string = json.dumps({
             "body": {
                 "token": token,
-                "tenant_id": tenant_id  # Pasamos tenant_id para validación
+                "tenant_id": tenant_id
             }
         })
 
@@ -42,8 +43,9 @@ def lambda_handler(event, context):
         dynamodb = boto3.resource('dynamodb')
         table_name = os.environ['TABLE_ROOMS']
         table = dynamodb.Table(table_name)
+        index_name = os.environ['INDEXLSI1_ROOMS']
 
-        # Consultar la habitación por tenant_id y room_id
+        # Intentar buscar usando las claves primarias
         response = table.get_item(
             Key={
                 'tenant_id': tenant_id,
@@ -51,11 +53,22 @@ def lambda_handler(event, context):
             }
         )
 
-        # Si la habitación no existe
+        # Si no se encuentra con las claves primarias, usar el índice LSI
         if 'Item' not in response:
+            query_response = table.query(
+                IndexName=index_name,
+                KeyConditionExpression=Key('tenant_id').eq(tenant_id) & Key('room_name').eq(room_id)
+            )
+
+            if not query_response.get('Items'):
+                return {
+                    'statusCode': 404,
+                    'body': '{"error": "Room not found"}'
+                }
+
             return {
-                'statusCode': 404,
-                'body': '{"error": "Room not found"}'
+                'statusCode': 200,
+                'body': json.dumps(query_response['Items'][0])
             }
 
         return {
@@ -66,5 +79,5 @@ def lambda_handler(event, context):
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': f'Error: {str(e)}'
+            'body': {'error': f'Error interno del servidor: {str(e)}'}
         }

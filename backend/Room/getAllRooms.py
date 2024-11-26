@@ -1,5 +1,4 @@
 import boto3
-from boto3.dynamodb.conditions import Key
 import json
 import os
 
@@ -40,13 +39,9 @@ def lambda_handler(event, context):
         dynamodb = boto3.resource('dynamodb')
         table_name = os.environ['TABLE_ROOMS']
         table = dynamodb.Table(table_name)
-        index_name = os.environ['INDEXGSI1_ROOMS']
 
-        # Consulta usando el índice GSI
-        response = table.query(
-            IndexName=index_name,
-            KeyConditionExpression=Key('availability').eq('disponible')
-        )
+        # Obtener todas las habitaciones sin filtrar por disponibilidad
+        response = table.scan()
 
         return {
             'statusCode': 200,

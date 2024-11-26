@@ -42,19 +42,21 @@ def lambda_handler(event, context):
         dynamodb = boto3.resource('dynamodb')
         table_name = os.environ['TABLE_ROOMS']
         table = dynamodb.Table(table_name)
-        index_name = os.environ['INDEXGSI1_ROOMS']
+        index_name = os.environ['INDEXLSI1_ROOMS']
 
-        # Obtener la disponibilidad actual usando el GSI
-        response = table.query(
+        # Consultar la habitación usando el LSI en lugar de depender de availability
+        query_response = table.query(
             IndexName=index_name,
-            KeyConditionExpression=Key('availability').eq('disponible') & Key('tenant_id').eq(tenant_id)
+            KeyConditionExpression=Key('tenant_id').eq(tenant_id)
         )
-        room = next((r for r in response.get('Items', []) if r['room_id'] == room_id), None)
+
+        # Buscar la habitación por room_id dentro de los resultados
+        room = next((r for r in query_response.get('Items', []) if r['room_id'] == room_id), None)
 
         if not room:
             return {
                 'statusCode': 404,
-                'body': {'error': 'Habitación no encontrada o no disponible'}
+                'body': {'error': 'Habitación no encontrada'}
             }
 
         # Cambiar entre "disponible" y "reservado"
