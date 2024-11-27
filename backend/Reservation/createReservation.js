@@ -5,6 +5,7 @@ const lambda = new AWS.Lambda();
 
 module.exports.createReservation = async (event) => {
     try {
+        // Obtener el token del encabezado
         const token = event.headers.Authorization;
         if (!token) {
             return {
@@ -13,6 +14,7 @@ module.exports.createReservation = async (event) => {
             };
         }
 
+        // Parsear el cuerpo del evento
         const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
         const { tenant_id, user_id, room_id, service_id, start_date, end_date } = body;
 
@@ -45,7 +47,7 @@ module.exports.createReservation = async (event) => {
         // Validar el token del usuario llamando a la Lambda correspondiente
         const functionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
         const payload = {
-            body: { token, tenant_id }
+            body: JSON.stringify({ token, tenant_id })
         };
 
         const tokenResponse = await lambda.invoke({
@@ -56,11 +58,23 @@ module.exports.createReservation = async (event) => {
 
         const responseBody = JSON.parse(tokenResponse.Payload);
         if (responseBody.statusCode !== 200) {
+            const parsedBody =
+                typeof responseBody.body === 'string'
+                    ? JSON.parse(responseBody.body)
+                    : responseBody.body;
+
             return {
                 statusCode: responseBody.statusCode,
-                body: responseBody.body
+                body: JSON.stringify({ error: parsedBody.error || 'Token inválido' })
             };
         }
+
+        const parsedResponse =
+            typeof responseBody.body === 'string'
+                ? JSON.parse(responseBody.body)
+                : responseBody.body;
+
+        console.log(`Token válido. Usuario autenticado: ${parsedResponse.user_id}`);
 
         // Crear la ID de la reserva
         const id = `${tenant_id}#${room_id}#${service_id}`;
