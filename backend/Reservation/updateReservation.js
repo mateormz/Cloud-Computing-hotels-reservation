@@ -3,13 +3,14 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 exports.updateReservation = async (event) => {
     try {
-        console.log("Evento recibido:", JSON.stringify(event)); // Log del evento completo
+        // Log del evento recibido
+        console.log("Evento recibido:", JSON.stringify(event));
 
-        // Extraer tenant_id, reservation_id desde pathParameters y los updates desde el body
+        // Extraer tenant_id y reservation_id desde pathParameters
         const tenant_id = event.pathParameters?.tenant_id;
         const reservation_id = event.pathParameters?.reservation_id;
-        const updates = JSON.parse(event.body);
 
+        // Validar si los parámetros están presentes
         if (!tenant_id || !reservation_id) {
             console.error("Error: tenant_id o reservation_id no proporcionado.");
             return {
@@ -20,18 +21,14 @@ exports.updateReservation = async (event) => {
 
         console.log("Parámetros extraídos: tenant_id =", tenant_id, ", reservation_id =", reservation_id);
 
-        // Construir la expresión de actualización
-        let updateExpression = "SET ";
-        const expressionValues = {};
-        Object.keys(updates).forEach((key, index) => {
-            updateExpression += `${key} = :${key}`;
-            if (index < Object.keys(updates).length - 1) {
-                updateExpression += ", ";
-            }
-            expressionValues[`:${key}`] = updates[key];
-        });
+        // Extraer los datos de actualización del cuerpo de la solicitud
+        const updates = JSON.parse(event.body);
 
-        // Configurar la tabla de DynamoDB y realizar la actualización
+        // Preparar la expresión de actualización
+        const updateExpression = "SET " + Object.keys(updates).map((key) => `${key} = :${key}`).join(", ");
+        const expressionValues = Object.fromEntries(Object.keys(updates).map((key) => [`:${key}`, updates[key]]));
+
+        // Definir parámetros para la actualización en DynamoDB
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
             Key: {
@@ -40,41 +37,31 @@ exports.updateReservation = async (event) => {
             },
             UpdateExpression: updateExpression,
             ExpressionAttributeValues: expressionValues,
-            ReturnValues: "ALL_NEW"
+            ReturnValues: "ALL_NEW", // Obtener los atributos actualizados
         };
 
+        // Realizar la actualización en la base de datos
         const result = await dynamoDb.update(params).promise();
 
-        // Verificar si la reserva fue actualizada correctamente
-        if (!result.Attributes) {
-            console.warn(`Reserva no encontrada o no se pudo actualizar para tenant_id: ${tenant_id}, reservation_id: ${reservation_id}`);
-            return {
-                statusCode: 404,
-                body: JSON.stringify({ error: 'Reserva no encontrada o no se pudo actualizar' }),
-            };
-        }
+        console.log("Reserva actualizada:", JSON.stringify(result.Attributes));
 
-        console.log("Reserva actualizada con éxito:", result.Attributes);
-
-// Respuesta de éxito
+        // Responder con éxito
         return {
             statusCode: 200,
-            body: {
+            body: JSON.stringify({
                 message: 'Reserva actualizada con éxito',
                 reservation: result.Attributes
-            },
+            }),
         };
-
-// Respuesta de error
     } catch (error) {
+        // Manejo de errores
         console.error("Error interno en updateReservation:", error);
         return {
             statusCode: 500,
-            body: {
+            body: JSON.stringify({
                 error: 'Error interno del servidor',
-                details: error.message
-            }
+                details: error.message,
+            }),
         };
     }
-
 };
