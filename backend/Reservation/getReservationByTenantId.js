@@ -6,106 +6,96 @@ module.exports.getReservationByTenantId = async (event) => {
     try {
         console.log("Evento recibido:", event);
 
-        // Validar si los pathParameters están presentes
-        if (!event.pathParameters || typeof event.pathParameters.tenant_id === 'undefined') {
-            return {
-                statusCode: 400,
-                body: { error: 'El tenant_id es obligatorio y no se proporcionó en los parámetros de la ruta' }
-            };
-        }
-
-        const { tenant_id } = event.pathParameters;
-
-        // Validar token
+        // Validación del token
         const token = event.headers?.Authorization;
         if (!token) {
             return {
                 statusCode: 400,
-                body: { error: 'Token no proporcionado' }
+                body: JSON.stringify({ error: 'Token no proporcionado' }),
+            };
+        }
+
+        // Extraer tenant_id de los pathParameters
+        const tenant_id = event.pathParameters?.tenant_id;
+        if (!tenant_id) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'El tenant_id es obligatorio y no se proporcionó en los parámetros de la ruta' }),
             };
         }
 
         console.log("Validando token para tenant_id:", tenant_id);
 
         // Llamar a la función de validación del token
-        const validateTokenFunction = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
+        const validateTokenFunctionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
         const tokenPayload = {
-            body: { token, tenant_id }
+            body: {
+                token: token,
+                tenant_id: tenant_id,
+            },
         };
 
-        const tokenResponse = await lambda.invoke({
-            FunctionName: validateTokenFunction,
-            InvocationType: 'RequestResponse',
-            Payload: JSON.stringify(tokenPayload)
-        }).promise();
+        const validateTokenResponse = await lambda
+            .invoke({
+                FunctionName: validateTokenFunctionName,
+                InvocationType: 'RequestResponse',
+                Payload: JSON.stringify(tokenPayload),
+            })
+            .promise();
 
-        const tokenResponseBody = JSON.parse(tokenResponse.Payload);
+        const validateTokenBody = JSON.parse(validateTokenResponse.Payload);
 
-        if (tokenResponseBody.statusCode !== 200) {
+        if (validateTokenBody.statusCode !== 200) {
             const parsedBody =
-                typeof tokenResponseBody.body === 'string'
-                    ? JSON.parse(tokenResponseBody.body)
-                    : tokenResponseBody.body;
+                typeof validateTokenBody.body === 'string'
+                    ? JSON.parse(validateTokenBody.body)
+                    : validateTokenBody.body;
 
             return {
-                statusCode: tokenResponseBody.statusCode,
-                body: { error: parsedBody.error || 'Token inválido' }
+                statusCode: validateTokenBody.statusCode,
+                body: JSON.stringify({ error: parsedBody.error || 'Token inválido' }),
             };
         }
 
         console.log("Token validado correctamente.");
 
-        // Consultar las reservas por tenant_id usando el índice secundario local
+        // Consultar las reservas para el tenant_id usando el índice secundario local (LSI)
         console.log("Consultando reservas para tenant_id:", tenant_id);
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
-            IndexName: process.env.INDEXLSI1_RESERVATIONS, // Usar el índice secundario local
+            IndexName: process.env.INDEXLSI1_RESERVATIONS, // Usar LSI
             KeyConditionExpression: "tenant_id = :tenant_id",
             ExpressionAttributeValues: {
-                ":tenant_id": tenant_id
-            }
+                ":tenant_id": tenant_id,
+            },
         };
 
-        const result = await dynamoDb.query(params).promise();
+        const reservationsResult = await dynamoDb.query(params).promise();
 
         // Validar si no hay reservas
-        if (!result.Items || result.Items.length === 0) {
+        if (!reservationsResult.Items || reservationsResult.Items.length === 0) {
             return {
                 statusCode: 404,
-                body: { message: 'No se encontraron reservas para este tenant_id' }
+                body: JSON.stringify({ message: 'No se encontraron reservas para este tenant_id' }),
             };
         }
 
-        console.log("Reservas encontradas:", result.Items);
+        console.log("Reservas encontradas:", reservationsResult.Items);
 
         // Preparar respuesta
-        const reservations = result.Items.map((reservation) => {
-            return {
-                reservation_id: reservation.reservation_id,
-                room_id: reservation.room_id,
-                user_id: reservation.user_id,
-                service_id: reservation.service_id,
-                start_date: reservation.start_date,
-                end_date: reservation.end_date,
-                status: reservation.status,
-                created_at: reservation.created_at
-            };
-        });
-
         return {
             statusCode: 200,
-            body: { reservations }
+            body: JSON.stringify({ reservations: reservationsResult.Items }),
         };
-
     } catch (error) {
         console.error('Error en getReservationByTenantId:', error);
         return {
             statusCode: 500,
-            body: {
+            body: JSON.stringify({
                 error: 'Error interno del servidor',
-                details: error.message
-            }
+                details: error.message,
+            }),
         };
     }
 };
