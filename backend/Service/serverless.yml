@@ -18,11 +18,38 @@ provider:
 
 functions:
   createService:
-    handler: CreateService.handler
+    handler: createService.handler
     events:
       - http:
           path: /service/create
           method: post
+          cors: true
+          integration: lambda
+
+  readService:
+    handler: readService.handler
+    events:
+      - http:
+          path: /service/read
+          method: get
+          cors: true
+          integration: lambda
+
+  updateService:
+    handler: updateService.handler
+    events:
+      - http:
+          path: /service/update
+          method: put
+          cors: true
+          integration: lambda
+
+  deleteService:
+    handler: deleteService.handler
+    events:
+      - http:
+          path: /service/delete
+          method: delete
           cors: true
           integration: lambda
 
@@ -38,7 +65,7 @@ resources:
           - AttributeName: servicio_nombre
             AttributeType: S
           - AttributeName: precio
-            AttributeType: N
+            AttributeType: S
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
