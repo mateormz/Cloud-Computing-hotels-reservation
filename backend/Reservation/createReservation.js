@@ -1,52 +1,86 @@
 const AWS = require('aws-sdk');
 
-
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const lambda = new AWS.Lambda();
 
+// Función para validar el token del usuario
 async function validateUserToken(token, tenant_id) {
-    const functionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
-    const payload = {
-        body: { token, tenant_id }
-    };
+    try {
+        const functionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
+        const payload = {
+            body: { token, tenant_id }
+        };
 
-    const response = await lambda.invoke({
-        FunctionName: functionName,
-        InvocationType: 'RequestResponse',
-        Payload: JSON.stringify(payload),
-    }).promise();
+        const response = await lambda.invoke({
+            FunctionName: functionName,
+            InvocationType: 'RequestResponse',
+            Payload: JSON.stringify(payload),
+        }).promise();
 
-    const responseBody = JSON.parse(response.Payload);
+        const responseBody = JSON.parse(response.Payload);
 
-    return {
-        success: responseBody.statusCode === 200,
-        statusCode: responseBody.statusCode,
-        message: responseBody.body?.error || responseBody.body,
-        user_id: responseBody.body?.user_id // Extrae el user_id si el token es válido
-    };
+        if (responseBody.statusCode === 200) {
+            const parsedBody =
+                typeof responseBody.body === 'string'
+                    ? JSON.parse(responseBody.body)
+                    : responseBody.body;
+
+            return {
+                success: true,
+                user_id: parsedBody.user_id,
+                message: 'Token válido',
+            };
+        }
+
+        return {
+            success: false,
+            statusCode: responseBody.statusCode,
+            message: responseBody.body?.error || 'Token inválido',
+        };
+    } catch (error) {
+        console.error('Error en validateUserToken:', error);
+        return {
+            success: false,
+            statusCode: 500,
+            message: 'Error interno al validar el token',
+            details: error.message,
+        };
+    }
 }
 
+// Función para validar la disponibilidad de la habitación
 async function validateRoomAvailability(tenant_id, room_id) {
-    const functionName = `${process.env.SERVICE_NAME_ROOM}-${process.env.STAGE}-hotel_validateRoomAvailability`;
-    const payload = {
-        body: { tenant_id, room_id }
-    };
+    try {
+        const functionName = `${process.env.SERVICE_NAME_ROOM}-${process.env.STAGE}-hotel_validateRoomAvailability`;
+        const payload = {
+            body: { tenant_id, room_id }
+        };
 
-    const response = await lambda.invoke({
-        FunctionName: functionName,
-        InvocationType: 'RequestResponse',
-        Payload: JSON.stringify(payload),
-    }).promise();
+        const response = await lambda.invoke({
+            FunctionName: functionName,
+            InvocationType: 'RequestResponse',
+            Payload: JSON.stringify(payload),
+        }).promise();
 
-    const responseBody = JSON.parse(response.Payload);
+        const responseBody = JSON.parse(response.Payload);
 
-    return {
-        success: responseBody.statusCode === 200,
-        statusCode: responseBody.statusCode,
-        message: responseBody.body?.error || responseBody.body
-    };
+        return {
+            success: responseBody.statusCode === 200,
+            statusCode: responseBody.statusCode,
+            message: responseBody.body?.error || responseBody.body,
+        };
+    } catch (error) {
+        console.error('Error en validateRoomAvailability:', error);
+        return {
+            success: false,
+            statusCode: 500,
+            message: 'Error interno al validar la disponibilidad',
+            details: error.message,
+        };
+    }
 }
 
+// Función principal para crear una reserva
 module.exports.createReservation = async (event) => {
     try {
         console.log("Evento recibido:", event);
@@ -100,9 +134,11 @@ module.exports.createReservation = async (event) => {
         if (!userValidation.success) {
             return {
                 statusCode: userValidation.statusCode,
-                body: userValidation.message
+                body: { error: userValidation.message }
             };
         }
+
+        console.log(`Token válido. Usuario autenticado: ${userValidation.user_id}`);
 
         // Validar disponibilidad de la habitación
         console.log("Validando disponibilidad de la habitación...");
