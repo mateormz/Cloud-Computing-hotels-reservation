@@ -95,7 +95,7 @@ resources:
             AttributeType: S
           - AttributeName: availability
             AttributeType: S
-           - AttributeName: price_per_night
+          - AttributeName: price_per_night
             AttributeType: S
         KeySchema:
           - AttributeName: tenant_id
