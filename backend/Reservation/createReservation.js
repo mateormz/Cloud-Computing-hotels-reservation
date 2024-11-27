@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk');
-const { v4: uuidv4 } = require('uuid'); // Usamos uuid para generar un reservation_id único
+const { v4: uuidv4 } = require('uuid');
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const lambda = new AWS.Lambda();
@@ -13,7 +13,7 @@ module.exports.createReservation = async (event) => {
         if (!token) {
             return {
                 statusCode: 400,
-                body: { error: 'Token no proporcionado' } // Manteniendo JSON
+                body: { error: 'Token no proporcionado' }
             };
         }
 
@@ -27,11 +27,9 @@ module.exports.createReservation = async (event) => {
         if (!tenant_id || !user_id || !room_id || !service_id || !start_date || !end_date) {
             return {
                 statusCode: 400,
-                body: { error: 'Campos requeridos faltantes' } // Manteniendo JSON
+                body: { error: 'Campos requeridos faltantes' }
             };
         }
-
-        console.log("Campos validados correctamente. tenant_id:", tenant_id);
 
         // Validar formato y lógica de las fechas
         const startDate = new Date(start_date);
@@ -40,14 +38,14 @@ module.exports.createReservation = async (event) => {
         if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
             return {
                 statusCode: 400,
-                body: { error: 'Las fechas proporcionadas no son válidas' } // Manteniendo JSON
+                body: { error: 'Las fechas proporcionadas no son válidas' }
             };
         }
 
         if (startDate >= endDate) {
             return {
                 statusCode: 400,
-                body: { error: 'La fecha de inicio debe ser anterior a la fecha de fin' } // Manteniendo JSON
+                body: { error: 'La fecha de inicio debe ser anterior a la fecha de fin' }
             };
         }
 
@@ -58,13 +56,13 @@ module.exports.createReservation = async (event) => {
         console.log("Llamando a la función de validación de token:", functionName);
 
         const payload = {
-            body: { token, tenant_id } // No convertir a string
+            body: { token, tenant_id }
         };
 
         const tokenResponse = await lambda.invoke({
             FunctionName: functionName,
             InvocationType: 'RequestResponse',
-            Payload: JSON.stringify(payload), // Solo aquí se convierte porque AWS Lambda espera una string
+            Payload: JSON.stringify(payload),
         }).promise();
 
         const responseBody = JSON.parse(tokenResponse.Payload);
@@ -77,7 +75,7 @@ module.exports.createReservation = async (event) => {
 
             return {
                 statusCode: responseBody.statusCode,
-                body: parsedBody // Retornar JSON directamente
+                body: parsedBody
             };
         }
 
@@ -97,7 +95,7 @@ module.exports.createReservation = async (event) => {
             TableName: process.env.TABLE_RESERVATIONS,
             Item: {
                 tenant_id,
-                reservation_id, // Añadir reservation_id único
+                reservation_id,
                 user_id,
                 room_id,
                 service_id,
@@ -114,18 +112,44 @@ module.exports.createReservation = async (event) => {
 
         console.log("Reserva creada exitosamente:", params.Item);
 
+        // Llamar a la función para actualizar el estado de la habitación
+        console.log("Actualizando disponibilidad de la habitación...");
+        const toggleAvailabilityFunction = `${process.env.SERVICE_NAME_ROOM}-${process.env.STAGE}-hotel_toggleAvailability`;
+        const togglePayload = {
+            path: { tenant_id, room_id },
+            headers: { Authorization: token }
+        };
+
+        const toggleResponse = await lambda.invoke({
+            FunctionName: toggleAvailabilityFunction,
+            InvocationType: 'RequestResponse',
+            Payload: JSON.stringify(togglePayload),
+        }).promise();
+
+        const toggleResponseBody = JSON.parse(toggleResponse.Payload);
+
+        if (toggleResponseBody.statusCode !== 200) {
+            console.error("Error al actualizar disponibilidad de la habitación:", toggleResponseBody.body);
+            return {
+                statusCode: 500,
+                body: { error: 'Reserva creada, pero fallo al actualizar la disponibilidad de la habitación.' }
+            };
+        }
+
+        console.log("Disponibilidad de la habitación actualizada exitosamente.");
+
         return {
             statusCode: 200,
             body: {
-                message: 'Reserva creada con éxito',
-                reservation: params.Item // Retornar JSON directamente
+                message: 'Reserva creada con éxito y disponibilidad de la habitación actualizada.',
+                reservation: params.Item
             }
         };
     } catch (error) {
         console.error('Error en createReservation:', error);
         return {
             statusCode: 500,
-            body: { error: 'Error interno del servidor', details: error.message } // Manteniendo JSON
+            body: { error: 'Error interno del servidor', details: error.message }
         };
     }
 };
