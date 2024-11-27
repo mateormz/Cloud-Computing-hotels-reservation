@@ -82,7 +82,7 @@ module.exports.createReservation = async (event) => {
         console.log("Token validado correctamente.");
 
         // Llamar a la función `getRoomById` para verificar la existencia del `room_id`
-        const getRoomFunction = `${process.env.SERVICE_NAME_ROOM}-${process.env.STAGE}-getRoomById`;
+        const getRoomFunction = `${process.env.SERVICE_NAME_ROOM}-${process.env.STAGE}-room_getById`;
         console.log("Llamando a la función getRoomById:", getRoomFunction);
 
         const roomPayload = {
