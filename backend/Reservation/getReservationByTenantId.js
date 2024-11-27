@@ -2,25 +2,28 @@ const AWS = require('aws-sdk');
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const lambda = new AWS.Lambda();
 
-exports.getReservationByTenantId = async (event) => {
+exports.getReservationsByTenantId = async (event) => {
     try {
-        console.log("Evento recibido:", event);
+        console.log("Evento recibido:", JSON.stringify(event)); // Log del evento completo
 
         // Validación del token
         const token = event.headers?.Authorization;
         if (!token) {
+            console.error("Error: Token no proporcionado.");
             return {
                 statusCode: 400,
                 body: JSON.stringify({ error: 'Token no proporcionado' }),
             };
         }
 
-        // Extraer tenant_id de los pathParameters
-        const tenant_id = event.pathParameters?.tenant_id;
+        // Extraer tenant_id desde Path
+        const path = event.path || ''; // Asegurarse de que path exista
+        const tenant_id = path.split('/')[2]; // Extraer tenant_id desde la ruta
         if (!tenant_id) {
+            console.error("Error: tenant_id no proporcionado en la ruta.");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'El tenant_id es obligatorio y no se proporcionó en los parámetros de la ruta' }),
+                body: JSON.stringify({ error: 'El tenant_id es obligatorio y no se proporcionó en la ruta' }),
             };
         }
 
@@ -34,6 +37,7 @@ exports.getReservationByTenantId = async (event) => {
                 tenant_id: tenant_id,
             },
         };
+        console.log("Payload enviado para validar token:", JSON.stringify(tokenPayload));
 
         const validateTokenResponse = await lambda
             .invoke({
@@ -44,6 +48,7 @@ exports.getReservationByTenantId = async (event) => {
             .promise();
 
         const validateTokenBody = JSON.parse(validateTokenResponse.Payload);
+        console.log("Respuesta de validación del token:", JSON.stringify(validateTokenBody));
 
         if (validateTokenBody.statusCode !== 200) {
             const parsedBody =
@@ -51,6 +56,7 @@ exports.getReservationByTenantId = async (event) => {
                     ? JSON.parse(validateTokenBody.body)
                     : validateTokenBody.body;
 
+            console.error("Error en la validación del token:", parsedBody.error || "Token inválido");
             return {
                 statusCode: validateTokenBody.statusCode,
                 body: JSON.stringify({ error: parsedBody.error || 'Token inválido' }),
@@ -64,23 +70,25 @@ exports.getReservationByTenantId = async (event) => {
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
-            IndexName: process.env.INDEXLSI1_RESERVATIONS, // Usar el índice LSI para consultas optimizadas
+            IndexName: process.env.INDEXLSI1_RESERVATIONS, // Usar el índice LSI
             KeyConditionExpression: "tenant_id = :tenant_id",
             ExpressionAttributeValues: {
                 ":tenant_id": tenant_id,
             },
         };
+        console.log("Parámetros de consulta en DynamoDB:", JSON.stringify(params));
 
         const reservationsResult = await dynamoDb.query(params).promise();
 
         if (!reservationsResult.Items || reservationsResult.Items.length === 0) {
+            console.warn("No se encontraron reservas para tenant_id:", tenant_id);
             return {
                 statusCode: 404,
                 body: JSON.stringify({ message: 'No se encontraron reservas para este tenant_id' }),
             };
         }
 
-        console.log("Reservas encontradas:", reservationsResult.Items);
+        console.log("Reservas encontradas:", JSON.stringify(reservationsResult.Items));
 
         // Preparar respuesta
         return {
@@ -88,7 +96,7 @@ exports.getReservationByTenantId = async (event) => {
             body: JSON.stringify({ reservations: reservationsResult.Items }),
         };
     } catch (error) {
-        console.error('Error en getReservationsByTenantId:', error);
+        console.error('Error interno en getReservationsByTenantId:', error);
         return {
             statusCode: 500,
             body: JSON.stringify({
