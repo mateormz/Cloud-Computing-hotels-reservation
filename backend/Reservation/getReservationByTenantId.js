@@ -11,7 +11,7 @@ module.exports.getReservationByTenantId = async (event) => {
         if (!token) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Token no proporcionado' })
+                body: { error: 'Token no proporcionado' }
             };
         }
 
@@ -19,7 +19,7 @@ module.exports.getReservationByTenantId = async (event) => {
         if (!event.pathParameters || !event.pathParameters.tenant_id) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'El tenant_id es obligatorio' })
+                body: { error: 'El tenant_id es obligatorio' }
             };
         }
 
@@ -49,20 +49,22 @@ module.exports.getReservationByTenantId = async (event) => {
 
             return {
                 statusCode: tokenResponseBody.statusCode,
-                body: JSON.stringify({ error: parsedBody.error || 'Token inválido' })
+                body: { error: parsedBody.error || 'Token inválido' }
             };
         }
 
         console.log("Token validado correctamente.");
 
-        // Consultar las reservas por tenant_id
+        // Consultar las reservas por tenant_id usando el índice secundario local
         console.log("Consultando reservas para tenant_id:", tenant_id);
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
-            IndexName: process.env.INDEXLSI1_RESERVATIONS, // Usar el índice local
+            IndexName: process.env.INDEXLSI1_RESERVATIONS, // Usar el índice secundario local
             KeyConditionExpression: "tenant_id = :tenant_id",
-            ExpressionAttributeValues: { ":tenant_id": tenant_id }
+            ExpressionAttributeValues: {
+                ":tenant_id": tenant_id
+            }
         };
 
         const result = await dynamoDb.query(params).promise();
@@ -71,26 +73,39 @@ module.exports.getReservationByTenantId = async (event) => {
         if (!result.Items || result.Items.length === 0) {
             return {
                 statusCode: 404,
-                body: JSON.stringify({ message: 'No se encontraron reservas para este tenant_id' })
+                body: { message: 'No se encontraron reservas para este tenant_id' }
             };
         }
 
         console.log("Reservas encontradas:", result.Items);
 
-        // Retornar las reservas
+        // Preparar respuesta
+        const reservations = result.Items.map((reservation) => {
+            return {
+                reservation_id: reservation.reservation_id,
+                room_id: reservation.room_id,
+                user_id: reservation.user_id,
+                service_id: reservation.service_id,
+                start_date: reservation.start_date,
+                end_date: reservation.end_date,
+                status: reservation.status,
+                created_at: reservation.created_at
+            };
+        });
+
         return {
             statusCode: 200,
-            body: JSON.stringify({ reservations: result.Items })
+            body: { reservations }
         };
 
     } catch (error) {
-        console.error('Error en getReservationsByTenantId:', error);
+        console.error('Error en getReservationByTenantId:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({
+            body: {
                 error: 'Error interno del servidor',
                 details: error.message
-            })
+            }
         };
     }
 };
