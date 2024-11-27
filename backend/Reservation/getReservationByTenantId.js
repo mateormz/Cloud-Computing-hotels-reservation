@@ -6,6 +6,16 @@ module.exports.getReservationByTenantId = async (event) => {
     try {
         console.log("Evento recibido:", event);
 
+        // Validar si los pathParameters están presentes
+        if (!event.pathParameters || typeof event.pathParameters.tenant_id === 'undefined') {
+            return {
+                statusCode: 400,
+                body: { error: 'El tenant_id es obligatorio y no se proporcionó en los parámetros de la ruta' }
+            };
+        }
+
+        const { tenant_id } = event.pathParameters;
+
         // Validar token
         const token = event.headers?.Authorization;
         if (!token) {
@@ -14,16 +24,6 @@ module.exports.getReservationByTenantId = async (event) => {
                 body: { error: 'Token no proporcionado' }
             };
         }
-
-        // Validar pathParameters
-        if (!event.pathParameters || !event.pathParameters.tenant_id) {
-            return {
-                statusCode: 400,
-                body: { error: 'El tenant_id es obligatorio' }
-            };
-        }
-
-        const { tenant_id } = event.pathParameters;
 
         console.log("Validando token para tenant_id:", tenant_id);
 
