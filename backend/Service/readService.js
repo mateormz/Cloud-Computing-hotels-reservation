@@ -47,6 +47,16 @@ exports.handler = async (event) => {
         const result = await dynamodb.query(params).promise();
         console.log("Resultado de la consulta:", JSON.stringify(result.Items));
 
+        // Validar si no se encontraron servicios
+        if (!result.Items || result.Items.length === 0) {
+            return {
+                statusCode: 404,
+                body: {
+                    message: `El hotel con tenant_id '${tenant_id}' no tiene servicios registrados.`,
+                },
+            };
+        }
+
         // Construir la respuesta directamente como JSON
         return {
             statusCode: 200,
