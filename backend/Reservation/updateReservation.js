@@ -7,8 +7,8 @@ exports.updateReservation = async (event) => {
         console.log("Evento recibido:", JSON.stringify(event));
 
         // Extraer tenant_id y reservation_id desde pathParameters
-        const tenant_id = event.pathParameters?.tenant_id;
-        const reservation_id = event.pathParameters?.reservation_id;
+        const tenant_id = event.path?.tenant_id;
+        const reservation_id = event.path?.reservation_id;
 
         // Validar si los parámetros están presentes
         if (!tenant_id || !reservation_id) {
