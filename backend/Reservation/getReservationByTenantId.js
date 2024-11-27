@@ -12,7 +12,7 @@ exports.getReservationByTenantId = async (event) => {
             console.error("Error: Token no proporcionado.");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Token no proporcionado' }),
+                body: { error: 'Token no proporcionado' }, // Respuesta como JSON
             };
         }
 
@@ -22,7 +22,7 @@ exports.getReservationByTenantId = async (event) => {
             console.error("Error: tenant_id no proporcionado en la ruta.");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'El tenant_id es obligatorio y no se proporcionó en la ruta' }),
+                body: { error: 'El tenant_id es obligatorio y no se proporcionó en la ruta' }, // Respuesta como JSON
             };
         }
 
@@ -58,7 +58,7 @@ exports.getReservationByTenantId = async (event) => {
             console.error("Error en la validación del token:", parsedBody.error || "Token inválido");
             return {
                 statusCode: validateTokenBody.statusCode,
-                body: JSON.stringify({ error: parsedBody.error || 'Token inválido' }),
+                body: { error: parsedBody.error || 'Token inválido' }, // Respuesta como JSON
             };
         }
 
@@ -83,25 +83,27 @@ exports.getReservationByTenantId = async (event) => {
             console.warn("No se encontraron reservas para tenant_id:", tenant_id);
             return {
                 statusCode: 404,
-                body: JSON.stringify({ message: 'No se encontraron reservas para este tenant_id' }),
+                body: { message: 'No se encontraron reservas para este tenant_id' }, // Respuesta como JSON
             };
         }
 
         console.log("Reservas encontradas:", JSON.stringify(reservationsResult.Items));
 
-        // Preparar respuesta
+        // Preparar respuesta como JSON directamente
         return {
             statusCode: 200,
-            body: JSON.stringify({ reservations: reservationsResult.Items }),
+            body: {
+                reservations: reservationsResult.Items, // Respuesta como JSON
+            },
         };
     } catch (error) {
         console.error('Error interno en getReservationByTenantId:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({
+            body: {
                 error: 'Error interno del servidor',
                 details: error.message,
-            }),
+            }, // Respuesta como JSON
         };
     }
 };
