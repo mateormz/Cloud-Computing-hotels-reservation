@@ -12,7 +12,30 @@ def lambda_handler(event, context):
                 'body': json.dumps({'error': 'Token no proporcionado'})
             }
 
-        # Token válido
+        # Validación del token con otra función Lambda
+        function_name = f"{os.environ['SERVICE_NAME']}-{os.environ['STAGE']}-hotel_validateUserToken"
+        payload_string = json.dumps({
+            "body": {
+                "token": token,
+                "tenant_id": "global"  # Validación general
+            }
+        })
+
+        lambda_client = boto3.client('lambda')
+        invoke_response = lambda_client.invoke(
+            FunctionName=function_name,
+            InvocationType='RequestResponse',
+            Payload=payload_string
+        )
+        response = json.loads(invoke_response['Payload'].read())
+
+        if response['statusCode'] != 200:
+            return {
+                'statusCode': response['statusCode'],
+                'body': response['body']
+            }
+
+        # Token válido, continuar con la operación
         dynamodb = boto3.resource('dynamodb')
         table_name = os.environ['TABLE_NAME']
         table = dynamodb.Table(table_name)
@@ -22,14 +45,14 @@ def lambda_handler(event, context):
         comment_id = event['path']['comment_id']
 
         # Validar si el comentario existe antes de eliminarlo
-        response = table.get_item(
+        get_response = table.get_item(
             Key={
                 'tenant_id': tenant_id,
                 'comment_id': comment_id
             }
         )
 
-        if 'Item' not in response or response['Item'].get('room_id') != room_id:
+        if 'Item' not in get_response or get_response['Item'].get('room_id') != room_id:
             return {
                 'statusCode': 404,
                 'body': json.dumps({'error': 'El comentario no existe o no coincide'})
