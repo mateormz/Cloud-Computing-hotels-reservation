@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const lambda = new AWS.Lambda();
 
-exports.getReservationByTenantId = async (event) => {
+exports.getReservationsByTenantId = async (event) => {
     try {
         console.log("Evento recibido:", JSON.stringify(event)); // Log del evento completo
 
@@ -16,11 +16,24 @@ exports.getReservationByTenantId = async (event) => {
             };
         }
 
-        // Extraer tenant_id desde Path
-        const path = event.path || ''; // Asegurarse de que path exista
-        const tenant_id = path.split('/')[2]; // Extraer tenant_id desde la ruta
+        // Validación y extracción de tenant_id desde el path
+        const path = event.path;
+        console.log("Path recibido:", path); // Log del path recibido
+
+        if (typeof path !== 'string') {
+            console.error("Error: El path no es una cadena válida.");
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'El path no tiene un formato válido' }),
+            };
+        }
+
+        const segments = path.split('/'); // Separar el path por "/"
+        const tenant_id = segments[segments.length - 1]; // Extraer el último segmento como tenant_id
+        console.log("tenant_id extraído del path:", tenant_id);
+
         if (!tenant_id) {
-            console.error("Error: tenant_id no proporcionado en la ruta.");
+            console.error("Error: tenant_id no encontrado en el path.");
             return {
                 statusCode: 400,
                 body: JSON.stringify({ error: 'El tenant_id es obligatorio y no se proporcionó en la ruta' }),
