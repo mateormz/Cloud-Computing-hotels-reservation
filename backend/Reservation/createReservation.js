@@ -10,7 +10,7 @@ module.exports.createReservation = async (event) => {
         const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
         console.log("Cuerpo del evento:", body);
 
-        const { tenant_id, user_id, room_id, service_id, start_date, end_date } = body;
+        const { tenant_id, user_id, room_id, start_date, end_date } = body;
 
         if (!tenant_id || !user_id || !room_id || !start_date || !end_date) {
             console.error("Campos requeridos faltantes");
@@ -80,7 +80,6 @@ module.exports.createReservation = async (event) => {
                 reservation_id,
                 user_id,
                 room_id,
-                service_id,
                 start_date,
                 end_date,
                 created_at: new Date().toISOString(),
