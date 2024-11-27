@@ -7,8 +7,8 @@ exports.getReservationById = async (event) => {
         console.log("Evento recibido:", JSON.stringify(event)); // Log del evento completo
 
         // Validación y extracción de tenant_id y reservation_id desde pathParameters
-        const { tenant_id, reservation_id } = event.pathParameters || {};
-        if (!tenant_id || !reservation_id) {
+        const pathParameters = event.pathParameters;
+        if (!pathParameters || !pathParameters.tenant_id || !pathParameters.reservation_id) {
             console.error("Error: tenant_id o reservation_id no proporcionado.");
             return {
                 statusCode: 400,
@@ -16,7 +16,8 @@ exports.getReservationById = async (event) => {
             };
         }
 
-        console.log("Parámetros recibidos: tenant_id =", tenant_id, ", reservation_id =", reservation_id);
+        const { tenant_id, reservation_id } = pathParameters;
+        console.log("Parámetros extraídos: tenant_id =", tenant_id, ", reservation_id =", reservation_id);
 
         // Validación del token
         const token = event.headers?.Authorization;
