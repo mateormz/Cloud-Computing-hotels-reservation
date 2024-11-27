@@ -106,7 +106,17 @@ module.exports.createReservation = async (event) => {
             };
         }
 
-        console.log("Room encontrado:", roomResponseBody.body);
+        const room = roomResponseBody.body;
+
+        if (room.availability !== 'disponible') {
+            console.error("La habitación no está disponible.");
+            return {
+                statusCode: 400,
+                body: { error: 'La habitación no está disponible para reserva.' }
+            };
+        }
+
+        console.log("Room encontrado y disponible:", room);
 
         // Generar reservation_id único
         const reservation_id = uuidv4();
