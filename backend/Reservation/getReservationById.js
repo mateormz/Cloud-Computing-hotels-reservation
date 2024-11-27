@@ -6,7 +6,17 @@ exports.getReservationById = async (event) => {
     try {
         console.log("Evento recibido:", JSON.stringify(event)); // Log del evento completo
 
-        // Extraer tenant_id y reservation_id de los pathParameters
+        // Validación del token
+        const token = event.headers?.Authorization;
+        if (!token) {
+            console.error("Error: Token no proporcionado.");
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'Token no proporcionado' }),
+            };
+        }
+
+        // Validación y extracción de tenant_id y reservation_id desde los parámetros de la ruta
         const tenant_id = event.pathParameters?.tenant_id;
         const reservation_id = event.pathParameters?.reservation_id;
 
@@ -18,19 +28,9 @@ exports.getReservationById = async (event) => {
             };
         }
 
-        // Validación del token
-        const token = event.headers?.Authorization;
-        if (!token) {
-            console.error("Error: Token no proporcionado.");
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ error: 'Token no proporcionado' }),
-            };
-        }
+        console.log(`Validando token para tenant_id: ${tenant_id}`);
 
-        console.log("Validando token para tenant_id:", tenant_id);
-
-        // Llamar a la función de validación del token
+        // Llamar a la función Lambda para validar el token
         const validateTokenFunctionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
         const tokenPayload = {
             body: {
@@ -38,6 +38,8 @@ exports.getReservationById = async (event) => {
                 tenant_id: tenant_id,
             },
         };
+
+        console.log("Enviando payload para validar token:", JSON.stringify(tokenPayload));
 
         const validateTokenResponse = await lambda
             .invoke({
@@ -66,7 +68,7 @@ exports.getReservationById = async (event) => {
         console.log("Token validado correctamente.");
 
         // Consultar la reserva en DynamoDB
-        console.log("Consultando reserva para tenant_id:", tenant_id, "reservation_id:", reservation_id);
+        console.log("Consultando reserva en DynamoDB con tenant_id:", tenant_id, "y reservation_id:", reservation_id);
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
@@ -88,21 +90,23 @@ exports.getReservationById = async (event) => {
 
         console.log("Reserva encontrada:", JSON.stringify(reservationResponse.Item));
 
-        // Convertir valores Decimal a números si existen
+        // Preparar la respuesta con conversión de tipos si es necesario
         const reservation = reservationResponse.Item;
+
+        // Convertir valores Decimal a números
         for (const key in reservation) {
             if (reservation[key]?.constructor?.name === 'Decimal') {
                 reservation[key] = Number(reservation[key]);
             }
         }
 
-        // Preparar respuesta
+        // Devolver la reserva en formato JSON
         return {
             statusCode: 200,
-            body: reservation, // Respuesta directa en formato JSON
+            body: JSON.stringify(reservation),
         };
     } catch (error) {
-        console.error('Error interno en getReservationById:', error);
+        console.error("Error interno en getReservationById:", error);
         return {
             statusCode: 500,
             body: JSON.stringify({
