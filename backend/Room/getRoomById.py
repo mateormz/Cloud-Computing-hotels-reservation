@@ -1,6 +1,5 @@
 import boto3
 import os
-import json
 from decimal import Decimal
 
 def lambda_handler(event, context):
@@ -12,7 +11,7 @@ def lambda_handler(event, context):
         if not tenant_id or not room_id:
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'tenant_id o room_id no proporcionado'})
+                'body': {'error': 'tenant_id o room_id no proporcionado'}
             }
 
         # Validación de token
@@ -20,24 +19,24 @@ def lambda_handler(event, context):
         if not token:
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'Token no proporcionado'})
+                'body': {'error': 'Token no proporcionado'}
             }
 
         function_name = f"{os.environ['SERVICE_NAME']}-{os.environ['STAGE']}-hotel_validateUserToken"
 
         # Llamar al Lambda para validar el token
-        payload_string = json.dumps({
+        payload_string = {
             "body": {
                 "token": token,
                 "tenant_id": tenant_id
             }
-        })
+        }
 
         lambda_client = boto3.client('lambda')
         invoke_response = lambda_client.invoke(
             FunctionName=function_name,
             InvocationType='RequestResponse',
-            Payload=payload_string
+            Payload=json.dumps(payload_string)
         )
         response = json.loads(invoke_response['Payload'].read())
 
@@ -64,10 +63,10 @@ def lambda_handler(event, context):
         if 'Item' not in response:
             return {
                 'statusCode': 404,
-                'body': json.dumps({'error': 'Room not found'})
+                'body': {'error': 'Room not found'}
             }
 
-        # Preparar el resultado para serializar
+        # Preparar el resultado
         room = response['Item']
 
         # Reemplazar valores Decimal con tipos serializables
@@ -77,11 +76,11 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'body': json.dumps(room)
+            'body': room  # Retornar directamente como objeto JSON
         }
 
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': f'Error interno del servidor: {str(e)}'})
+            'body': {'error': f'Error interno del servidor: {str(e)}'}
         }
