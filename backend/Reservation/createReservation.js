@@ -10,9 +10,9 @@ module.exports.createReservation = async (event) => {
         const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
         console.log("Cuerpo del evento:", body);
 
-        const { tenant_id, user_id, room_id, start_date, end_date } = body;
+        const { tenant_id, user_id, room_id, service_id, start_date, end_date } = body;
 
-        if (!tenant_id || !user_id || !room_id || !start_date || !end_date) {
+        if (!tenant_id || !user_id || !room_id || !service_id || !start_date || !end_date) {
             console.error("Campos requeridos faltantes");
             return {
                 statusCode: 400,
@@ -70,16 +70,17 @@ module.exports.createReservation = async (event) => {
             };
         }
 
-        const reservation_id = uuid.v4();
-        console.log("Creando reserva con ID:", reservation_id);
+        const id = uuid.v4();
+        console.log("Creando reserva con ID:", id);
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
             Item: {
                 tenant_id,
-                reservation_id,
+                id,
                 user_id,
                 room_id,
+                service_id,
                 start_date,
                 end_date,
                 created_at: new Date().toISOString(),

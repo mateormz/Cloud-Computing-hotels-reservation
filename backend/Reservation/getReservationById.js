@@ -1,7 +1,3 @@
-const AWS = require('aws-sdk');
-const dynamoDb = new AWS.DynamoDB.DocumentClient();
-const lambda = new AWS.Lambda();
-
 module.exports.getReservationById = async (event) => {
     try {
         const token = event.headers.Authorization;
@@ -12,7 +8,7 @@ module.exports.getReservationById = async (event) => {
             };
         }
 
-        const { tenant_id, reservation_id } = event.pathParameters;
+        const { tenant_id, id } = event.pathParameters;
 
         const functionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
         const payload = {
@@ -35,7 +31,7 @@ module.exports.getReservationById = async (event) => {
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
-            Key: { tenant_id, reservation_id }
+            Key: { tenant_id, id }
         };
 
         const result = await dynamoDb.get(params).promise();

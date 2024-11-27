@@ -8,7 +8,7 @@ module.exports.deleteReservation = async (event) => {
             };
         }
 
-        const { tenant_id, reservation_id } = event.pathParameters;
+        const { tenant_id, id } = event.pathParameters;
 
         const functionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
         const payload = {
@@ -31,7 +31,7 @@ module.exports.deleteReservation = async (event) => {
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
-            Key: { tenant_id, reservation_id }
+            Key: { tenant_id, id }
         };
 
         await dynamoDb.delete(params).promise();
