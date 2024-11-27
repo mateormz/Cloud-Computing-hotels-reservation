@@ -5,6 +5,16 @@ import json
 
 def lambda_handler(event, context):
     try:
+        # Extraer tenant_id y room_id de los pathParameters
+        tenant_id = event['path'].get('tenant_id')
+        room_id = event['path'].get('room_id')
+
+        if not tenant_id or not room_id:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': 'tenant_id o room_id no proporcionado'})
+            }
+
         # Validación de token
         token = event['headers'].get('Authorization')
         if not token:
@@ -14,8 +24,6 @@ def lambda_handler(event, context):
             }
 
         function_name = f"{os.environ['SERVICE_NAME']}-{os.environ['STAGE']}-hotel_validateUserToken"
-        tenant_id = event['pathParameters']['tenant_id']
-        room_id = event['pathParameters']['room_id']
 
         # Llamar al Lambda para validar el token
         payload_string = json.dumps({
@@ -43,9 +51,8 @@ def lambda_handler(event, context):
         dynamodb = boto3.resource('dynamodb')
         table_name = os.environ['TABLE_ROOMS']
         table = dynamodb.Table(table_name)
-        index_name = os.environ['INDEXLSI1_ROOMS']
 
-        # Intentar buscar usando las claves primarias
+        # Consultar la habitación por tenant_id y room_id
         response = table.get_item(
             Key={
                 'tenant_id': tenant_id,
@@ -53,22 +60,11 @@ def lambda_handler(event, context):
             }
         )
 
-        # Si no se encuentra con las claves primarias, usar el índice LSI
+        # Si la habitación no existe
         if 'Item' not in response:
-            query_response = table.query(
-                IndexName=index_name,
-                KeyConditionExpression=Key('tenant_id').eq(tenant_id) & Key('room_name').eq(room_id)
-            )
-
-            if not query_response.get('Items'):
-                return {
-                    'statusCode': 404,
-                    'body': '{"error": "Room not found"}'
-                }
-
             return {
-                'statusCode': 200,
-                'body': json.dumps(query_response['Items'][0])
+                'statusCode': 404,
+                'body': '{"error": "Room not found"}'
             }
 
         return {
