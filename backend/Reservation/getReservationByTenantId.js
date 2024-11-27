@@ -7,7 +7,7 @@ module.exports.getReservationByTenantId = async (event) => {
         console.log("Evento recibido:", event);
 
         // Validar token
-        const token = event.headers.Authorization;
+        const token = event.headers?.Authorization;
         if (!token) {
             return {
                 statusCode: 400,
@@ -15,14 +15,15 @@ module.exports.getReservationByTenantId = async (event) => {
             };
         }
 
-        // Extraer tenant_id
-        const { tenant_id } = event.pathParameters;
-        if (!tenant_id) {
+        // Validar pathParameters
+        if (!event.pathParameters || !event.pathParameters.tenant_id) {
             return {
                 statusCode: 400,
                 body: JSON.stringify({ error: 'El tenant_id es obligatorio' })
             };
         }
+
+        const { tenant_id } = event.pathParameters;
 
         console.log("Validando token para tenant_id:", tenant_id);
 
