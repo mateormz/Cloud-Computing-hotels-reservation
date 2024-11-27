@@ -7,14 +7,14 @@ exports.getReservationById = async (event) => {
         console.log("Evento recibido:", JSON.stringify(event)); // Log del evento completo
 
         // Extraer tenant_id y reservation_id desde pathParameters
-        const tenant_id = event.path?.tenant_id;
-        const reservation_id = event.path?.reservation_id;
+        const tenant_id = event.pathParameters?.tenant_id;
+        const reservation_id = event.pathParameters?.reservation_id;
 
         if (!tenant_id || !reservation_id) {
             console.error("Error: tenant_id o reservation_id no proporcionado.");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'tenant_id o reservation_id no proporcionado' }),
+                body: { error: 'tenant_id o reservation_id no proporcionado' },
             };
         }
 
@@ -26,7 +26,7 @@ exports.getReservationById = async (event) => {
             console.error("Error: Token no proporcionado.");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Token no proporcionado' }),
+                body: { error: 'Token no proporcionado' },
             };
         }
 
@@ -63,7 +63,7 @@ exports.getReservationById = async (event) => {
             console.error("Error en la validación del token:", parsedBody.error || "Token inválido");
             return {
                 statusCode: validateTokenBody.statusCode,
-                body: JSON.stringify({ error: parsedBody.error || 'Token inválido' }),
+                body: { error: parsedBody.error || 'Token inválido' },
             };
         }
 
@@ -86,11 +86,11 @@ exports.getReservationById = async (event) => {
             console.warn(`Reserva no encontrada para tenant_id: ${tenant_id}, reservation_id: ${reservation_id}`);
             return {
                 statusCode: 404,
-                body: JSON.stringify({ error: 'Reserva no encontrada' }),
+                body: { error: 'Reserva no encontrada' },
             };
         }
 
-        console.log("Reserva encontrada:", JSON.stringify(reservationResponse.Item));
+        console.log("Reserva encontrada:", reservationResponse.Item);
 
         // Convertir valores Decimal a números (si existen)
         const reservation = reservationResponse.Item;
@@ -100,19 +100,19 @@ exports.getReservationById = async (event) => {
             }
         }
 
-        // Preparar respuesta
+        // Preparar respuesta directamente como un objeto
         return {
             statusCode: 200,
-            body: JSON.stringify(reservation), // Respuesta directa en formato JSON
+            body: reservation, // Respuesta directa en formato JSON, ya que es un objeto
         };
     } catch (error) {
         console.error("Error interno en getReservationById:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({
+            body: {
                 error: 'Error interno del servidor',
                 details: error.message,
-            }),
+            },
         };
     }
 };
