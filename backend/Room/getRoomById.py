@@ -6,8 +6,8 @@ from decimal import Decimal
 def lambda_handler(event, context):
     try:
         # Extraer tenant_id y room_id de los pathParameters
-        tenant_id = event['pathParameters'].get('tenant_id')
-        room_id = event['pathParameters'].get('room_id')
+        tenant_id = event['path'].get('tenant_id')
+        room_id = event['path'].get('room_id')
 
         if not tenant_id or not room_id:
             return {
