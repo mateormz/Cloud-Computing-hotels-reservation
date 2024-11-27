@@ -1,3 +1,4 @@
+CREATE: 
 import boto3
 import uuid
 from datetime import datetime
@@ -14,11 +15,12 @@ def lambda_handler(event, context):
                 'body': json.dumps({'error': 'Token no proporcionado'})
             }
 
+        # Validación del token usando otra Lambda (sin cambios)
         function_name = f"{os.environ['SERVICE_NAME']}-{os.environ['STAGE']}-hotel_validateUserToken"
         payload_string = json.dumps({
             "body": {
                 "token": token,
-                "tenant_id": "global"  # Validación general
+                "tenant_id": "global"
             }
         })
 
@@ -36,9 +38,9 @@ def lambda_handler(event, context):
                 'body': response['body']
             }
 
-        # Token válido, continuar con la operación
+        # Datos del comentario
         dynamodb = boto3.resource('dynamodb')
-        table_name = os.environ['TABLE_NAME']
+        table_name = os.environ['TABLE_COMMENTS']
         table = dynamodb.Table(table_name)
 
         tenant_id = event['body'].get('tenant_id')
@@ -49,11 +51,14 @@ def lambda_handler(event, context):
         if not all([tenant_id, user_id, room_id, comment_text]):
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'Faltan campos requeridos'})
+                'body': {'error': 'Faltan campos requeridos'}
             }
 
+        # Generar ID de comentario y timestamp
         comment_id = str(uuid.uuid4())
         created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # Inserción del comentario con `created_at`
         table.put_item(
             Item={
                 'tenant_id': tenant_id,
@@ -67,10 +72,10 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'body': json.dumps({'message': 'Comentario creado con éxito', 'comment_id': comment_id})
+            'body': {'message': 'Comentario creado con éxito', 'comment_id': comment_id}
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
+            'body': {'error': 'Error interno del servidor', 'details': str(e)}
         }
