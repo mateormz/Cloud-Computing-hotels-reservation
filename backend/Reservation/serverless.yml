@@ -54,7 +54,7 @@ functions:
           integration: lambda
 
   reservation_getAllByTenant:
-    handler: getReservationsByTenantId.getReservationsByTenantId
+    handler: getReservationByTenantId.getReservationByTenantId
     events:
       - http:
           path: /reservations/{tenant_id}
