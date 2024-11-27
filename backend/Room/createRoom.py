@@ -1,6 +1,7 @@
 import boto3
 import uuid
 from datetime import datetime
+from decimal import Decimal
 import os
 
 def lambda_handler(event, context):
@@ -14,11 +15,16 @@ def lambda_handler(event, context):
         table = dynamodb.Table(table_name)
 
         # Extraer datos del body
-        tenant_id = event['body'].get('tenant_id')
-        room_name = event['body'].get('room_name')
-        max_persons = event['body'].get('max_persons')
-        room_type = event['body'].get('room_type')
-        price_per_night = event['body'].get('price_per_night')
+        body = event.get('body', {})
+        if isinstance(body, str):
+            import json
+            body = json.loads(body)
+        
+        tenant_id = body.get('tenant_id')
+        room_name = body.get('room_name')
+        max_persons = body.get('max_persons')
+        room_type = body.get('room_type')
+        price_per_night = body.get('price_per_night')
         
         print("Datos extraídos del body:")
         print(f"Tenant ID: {tenant_id}")
@@ -33,6 +39,16 @@ def lambda_handler(event, context):
             return {
                 'statusCode': 400,
                 'body': {'error': 'Faltan campos requeridos'}
+            }
+
+        # Validar y convertir `price_per_night` a Decimal
+        try:
+            price_per_night = Decimal(str(price_per_night))
+        except Exception as e:
+            print("Error en la conversión de price_per_night:", str(e))
+            return {
+                'statusCode': 400,
+                'body': {'error': 'El campo price_per_night debe ser un número válido'}
             }
 
         # Generar un ID único para la habitación
@@ -56,7 +72,7 @@ def lambda_handler(event, context):
 
         # Respuesta de éxito
         return {
-            'statusCode': 200, 
+            'statusCode': 200,
             'body': {'message': 'Habitación creada con éxito', 'room_id': room_id}
         }
 
