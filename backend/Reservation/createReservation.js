@@ -1,4 +1,5 @@
 const AWS = require('aws-sdk');
+const { v4: uuidv4 } = require('uuid'); // Usamos uuid para generar un reservation_id único
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const lambda = new AWS.Lambda();
@@ -87,15 +88,16 @@ module.exports.createReservation = async (event) => {
 
         console.log(`Token válido. Usuario autenticado: ${parsedResponse.user_id}`);
 
-        // Crear la ID de la reserva
-        const id = `${tenant_id}#${room_id}#${service_id}`;
-        console.log("ID de la reserva generada:", id);
+        // Generar reservation_id único
+        const reservation_id = uuidv4();
+        console.log("reservation_id generado:", reservation_id);
 
         // Insertar la reserva en DynamoDB
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
             Item: {
                 tenant_id,
+                reservation_id, // Añadir reservation_id único
                 user_id,
                 room_id,
                 service_id,
