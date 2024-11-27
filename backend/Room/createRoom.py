@@ -70,12 +70,12 @@ def lambda_handler(event, context):
         # Respuesta de éxito
         return {
             'statusCode': 200,
-            'body': json.dumps({'message': 'Habitación creada con éxito', 'room_id': room_id})
+            'body': {'message': 'Habitación creada con éxito', 'room_id': room_id}
         }
 
     except Exception as e:
         print("Error inesperado:", str(e))  # Log del error para depuración
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
+            'body': {'error': 'Error interno del servidor', 'details': str(e)}
         }

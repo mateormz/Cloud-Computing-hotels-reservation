@@ -1,12 +1,13 @@
 import boto3
 import os
 import json
+from decimal import Decimal
 
 def lambda_handler(event, context):
     try:
         # Extraer tenant_id y room_id de los pathParameters
-        tenant_id = event['path'].get('tenant_id')
-        room_id = event['path'].get('room_id')
+        tenant_id = event['pathParameters'].get('tenant_id')
+        room_id = event['pathParameters'].get('room_id')
 
         if not tenant_id or not room_id:
             return {
@@ -63,17 +64,24 @@ def lambda_handler(event, context):
         if 'Item' not in response:
             return {
                 'statusCode': 404,
-                'body': '{"error": "Room not found"}'
+                'body': json.dumps({'error': 'Room not found'})
             }
 
-        # Retornar la respuesta tal cual, manteniendo `price_per_night` como string
+        # Preparar el resultado para serializar
+        room = response['Item']
+
+        # Reemplazar valores Decimal con tipos serializables
+        for key, value in room.items():
+            if isinstance(value, Decimal):
+                room[key] = float(value)
+
         return {
             'statusCode': 200,
-            'body': json.dumps(response['Item'])
+            'body': json.dumps(room)
         }
 
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': {'error': f'Error interno del servidor: {str(e)}'}
+            'body': json.dumps({'error': f'Error interno del servidor: {str(e)}'})
         }
