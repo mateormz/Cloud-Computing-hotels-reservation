@@ -128,16 +128,18 @@ exports.getReservationById = async (event) => {
         // Preparar respuesta
         return {
             statusCode: 200,
-            body: JSON.stringify(reservation), // Respuesta directa en formato JSON
+            body: reservation, // Respuesta directa como objeto JSON
         };
+
     } catch (error) {
         console.error("Error interno en getReservationById:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({
+            body: {
                 error: 'Error interno del servidor',
                 details: error.message,
-            }),
+            }, // Respuesta como objeto JSON
         };
     }
+
 };
