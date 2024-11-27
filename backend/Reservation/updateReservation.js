@@ -21,8 +21,13 @@ exports.updateReservation = async (event) => {
 
         console.log("Parámetros extraídos: tenant_id =", tenant_id, ", reservation_id =", reservation_id);
 
-        // Extraer los datos de actualización del cuerpo de la solicitud
-        const updates = JSON.parse(event.body);
+        // Verificar si el cuerpo de la solicitud es un objeto o una cadena
+        let updates;
+        if (typeof event.body === "string") {
+            updates = JSON.parse(event.body); // Si es un string, parseamos
+        } else {
+            updates = event.body; // Si ya es un objeto, lo usamos directamente
+        }
 
         // Preparar la expresión de actualización
         const updateExpression = "SET " + Object.keys(updates).map((key) => `${key} = :${key}`).join(", ");
@@ -50,7 +55,7 @@ exports.updateReservation = async (event) => {
             statusCode: 200,
             body: JSON.stringify({
                 message: 'Reserva actualizada con éxito',
-                reservation: result.Attributes
+                reservation: result.Attributes,
             }),
         };
     } catch (error) {
