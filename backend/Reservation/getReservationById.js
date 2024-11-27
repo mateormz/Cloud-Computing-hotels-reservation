@@ -1,5 +1,6 @@
 const AWS = require('aws-sdk');
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
+const lambda = new AWS.Lambda();
 
 exports.getReservationById = async (event) => {
     try {
@@ -19,37 +20,118 @@ exports.getReservationById = async (event) => {
 
         console.log("Parámetros extraídos: tenant_id =", tenant_id, ", reservation_id =", reservation_id);
 
-        // Consultar la reserva en DynamoDB usando GSI (por user_id y start_date)
+        // Validación del token
+        const token = event.headers?.Authorization;
+        if (!token) {
+            console.error("Error: Token no proporcionado.");
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'Token no proporcionado' }),
+            };
+        }
+
+        console.log("Validando token para tenant_id:", tenant_id);
+
+        // Llamar a la función Lambda para validar el token
+        const validateTokenFunctionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
+        const tokenPayload = {
+            body: {
+                token: token,
+                tenant_id: tenant_id,
+            },
+        };
+
+        console.log("Payload enviado para validar token:", JSON.stringify(tokenPayload));
+
+        const validateTokenResponse = await lambda
+            .invoke({
+                FunctionName: validateTokenFunctionName,
+                InvocationType: 'RequestResponse',
+                Payload: JSON.stringify(tokenPayload),
+            })
+            .promise();
+
+        const validateTokenBody = JSON.parse(validateTokenResponse.Payload);
+        console.log("Respuesta de validación del token:", JSON.stringify(validateTokenBody));
+
+        if (validateTokenBody.statusCode !== 200) {
+            const parsedBody =
+                typeof validateTokenBody.body === 'string'
+                    ? JSON.parse(validateTokenBody.body)
+                    : validateTokenBody.body;
+
+            console.error("Error en la validación del token:", parsedBody.error || "Token inválido");
+            return {
+                statusCode: validateTokenBody.statusCode,
+                body: JSON.stringify({ error: parsedBody.error || 'Token inválido' }),
+            };
+        }
+
+        console.log("Token validado correctamente.");
+
+        // Consultar la reserva en DynamoDB por tenant_id y reservation_id
         console.log(`Consultando reserva en DynamoDB para tenant_id: ${tenant_id}, reservation_id: ${reservation_id}`);
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
-            IndexName: process.env.INDEXGSI1_RESERVATIONS, // Usar el GSI
-            KeyConditionExpression: "user_id = :user_id AND start_date = :start_date",
-            ExpressionAttributeValues: {
-                ":user_id": tenant_id, // Usar tenant_id como user_id
-                ":start_date": "2024-12-01T00:00:00", // Ejemplo de fecha
+            Key: {
+                tenant_id: tenant_id,
+                reservation_id: reservation_id,
             },
         };
 
-        const reservationResponse = await dynamoDb.query(params).promise();
+        const reservationResponse = await dynamoDb.get(params).promise();
 
-        if (!reservationResponse.Items || reservationResponse.Items.length === 0) {
+        // Si no encontramos la reserva con la clave primaria, usamos el GSI
+        if (!reservationResponse.Item) {
             console.warn(`Reserva no encontrada para tenant_id: ${tenant_id}, reservation_id: ${reservation_id}`);
+            console.log("Buscando la reserva usando GSI...");
+
+            // Parámetros de consulta usando GSI (por ejemplo, usando user_id y start_date)
+            const gsiParams = {
+                TableName: process.env.TABLE_RESERVATIONS,
+                IndexName: process.env.INDEXGSI1_RESERVATIONS,  // Usamos el GSI
+                KeyConditionExpression: "tenant_id = :tenant_id AND reservation_id = :reservation_id",
+                ExpressionAttributeValues: {
+                    ":tenant_id": tenant_id,
+                    ":reservation_id": reservation_id,
+                },
+            };
+
+            const gsiResponse = await dynamoDb.query(gsiParams).promise();
+
+            if (!gsiResponse.Items || gsiResponse.Items.length === 0) {
+                console.error("Reserva no encontrada usando GSI.");
+                return {
+                    statusCode: 404,
+                    body: JSON.stringify({ error: 'Reserva no encontrada' }),
+                };
+            }
+
+            console.log("Reserva encontrada usando GSI:", JSON.stringify(gsiResponse.Items[0]));
             return {
-                statusCode: 404,
-                body: JSON.stringify({ error: 'Reserva no encontrada' }),
+                statusCode: 200,
+                body: JSON.stringify(gsiResponse.Items[0]),  // Respuesta usando GSI
             };
         }
 
-        console.log("Reserva encontrada:", JSON.stringify(reservationResponse.Items[0]));
+        console.log("Reserva encontrada:", JSON.stringify(reservationResponse.Item));
 
+        // Convertir valores Decimal a números si existen
+        const reservation = reservationResponse.Item;
+        for (const key in reservation) {
+            if (reservation[key]?.constructor?.name === 'Decimal') {
+                reservation[key] = Number(reservation[key]);
+            }
+        }
+
+        // Preparar respuesta
         return {
             statusCode: 200,
-            body: JSON.stringify(reservationResponse.Items[0]),
+            body: JSON.stringify(reservation), // Respuesta directa en formato JSON
         };
     } catch (error) {
-        console.error('Error interno en getReservationById:', error);
+        console.error("Error interno en getReservationById:", error);
         return {
             statusCode: 500,
             body: JSON.stringify({
