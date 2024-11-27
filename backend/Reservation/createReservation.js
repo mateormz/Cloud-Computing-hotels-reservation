@@ -114,7 +114,7 @@ module.exports.createReservation = async (event) => {
 
         // Llamar a la función para actualizar el estado de la habitación
         console.log("Actualizando disponibilidad de la habitación...");
-        const toggleAvailabilityFunction = `${process.env.SERVICE_NAME_ROOM}-${process.env.STAGE}-hotel_toggleAvailability`;
+        const toggleAvailabilityFunction = `${process.env.SERVICE_NAME_ROOM}-${process.env.STAGE}-room_toggleAvailability`;
         const togglePayload = {
             path: { tenant_id, room_id },
             headers: { Authorization: token }
