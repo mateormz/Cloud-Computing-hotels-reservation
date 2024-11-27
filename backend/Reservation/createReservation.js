@@ -52,39 +52,61 @@ module.exports.createReservation = async (event) => {
         console.log("Fechas validadas correctamente. start_date:", startDate, "end_date:", endDate);
 
         // Validar el token del usuario llamando a la Lambda correspondiente
-        const functionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
-        console.log("Llamando a la función de validación de token:", functionName);
+        const validateTokenFunction = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
+        console.log("Llamando a la función de validación de token:", validateTokenFunction);
 
-        const payload = {
+        const tokenPayload = {
             body: { token, tenant_id }
         };
 
         const tokenResponse = await lambda.invoke({
-            FunctionName: functionName,
+            FunctionName: validateTokenFunction,
             InvocationType: 'RequestResponse',
-            Payload: JSON.stringify(payload),
+            Payload: JSON.stringify(tokenPayload),
         }).promise();
 
-        const responseBody = JSON.parse(tokenResponse.Payload);
+        const tokenResponseBody = JSON.parse(tokenResponse.Payload);
 
-        if (responseBody.statusCode !== 200) {
+        if (tokenResponseBody.statusCode !== 200) {
             const parsedBody =
-                typeof responseBody.body === 'string'
-                    ? JSON.parse(responseBody.body)
-                    : responseBody.body;
+                typeof tokenResponseBody.body === 'string'
+                    ? JSON.parse(tokenResponseBody.body)
+                    : tokenResponseBody.body;
 
             return {
-                statusCode: responseBody.statusCode,
+                statusCode: tokenResponseBody.statusCode,
                 body: parsedBody
             };
         }
 
-        const parsedResponse =
-            typeof responseBody.body === 'string'
-                ? JSON.parse(responseBody.body)
-                : responseBody.body;
+        console.log("Token validado correctamente.");
 
-        console.log(`Token válido. Usuario autenticado: ${parsedResponse.user_id}`);
+        // Llamar a la función `getRoomById` para verificar la existencia del `room_id`
+        const getRoomFunction = `${process.env.SERVICE_NAME_ROOM}-${process.env.STAGE}-getRoomById`;
+        console.log("Llamando a la función getRoomById:", getRoomFunction);
+
+        const roomPayload = {
+            path: { tenant_id, room_id },
+            headers: { Authorization: token }
+        };
+
+        const roomResponse = await lambda.invoke({
+            FunctionName: getRoomFunction,
+            InvocationType: 'RequestResponse',
+            Payload: JSON.stringify(roomPayload),
+        }).promise();
+
+        const roomResponseBody = JSON.parse(roomResponse.Payload);
+
+        if (roomResponseBody.statusCode !== 200) {
+            console.error("Error al verificar room_id:", roomResponseBody.body);
+            return {
+                statusCode: roomResponseBody.statusCode,
+                body: { error: 'La habitación no existe' }
+            };
+        }
+
+        console.log("Room encontrado:", roomResponseBody.body);
 
         // Generar reservation_id único
         const reservation_id = uuidv4();
@@ -112,8 +134,7 @@ module.exports.createReservation = async (event) => {
 
         console.log("Reserva creada exitosamente:", params.Item);
 
-        // Llamar a la función para actualizar el estado de la habitación
-        console.log("Actualizando disponibilidad de la habitación...");
+        // Actualizar la disponibilidad de la habitación
         const toggleAvailabilityFunction = `${process.env.SERVICE_NAME_ROOM}-${process.env.STAGE}-room_toggleAvailability`;
         const togglePayload = {
             path: { tenant_id, room_id },
