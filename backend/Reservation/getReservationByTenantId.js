@@ -6,7 +6,7 @@ exports.getReservationByTenantId = async (event) => {
     try {
         console.log("Evento recibido:", JSON.stringify(event)); // Log del evento completo
 
-        // Validación del token
+        // Validación de token
         const token = event.headers?.Authorization;
         if (!token) {
             console.error("Error: Token no proporcionado.");
@@ -16,24 +16,10 @@ exports.getReservationByTenantId = async (event) => {
             };
         }
 
-        // Validación y extracción de tenant_id desde el path
-        const path = event.path;
-        console.log("Path recibido:", path); // Log del path recibido
-
-        if (typeof path !== 'string') {
-            console.error("Error: El path no es una cadena válida.");
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ error: 'El path no tiene un formato válido' }),
-            };
-        }
-
-        const segments = path.split('/'); // Separar el path por "/"
-        const tenant_id = segments[segments.length - 1]; // Extraer el último segmento como tenant_id
-        console.log("tenant_id extraído del path:", tenant_id);
-
+        // Extraer tenant_id desde el path
+        const tenant_id = event.path?.tenant_id;
         if (!tenant_id) {
-            console.error("Error: tenant_id no encontrado en el path.");
+            console.error("Error: tenant_id no proporcionado en la ruta.");
             return {
                 statusCode: 400,
                 body: JSON.stringify({ error: 'El tenant_id es obligatorio y no se proporcionó en la ruta' }),
@@ -78,7 +64,7 @@ exports.getReservationByTenantId = async (event) => {
 
         console.log("Token validado correctamente.");
 
-        // Consultar las reservas usando el índice secundario local (LSI)
+        // Consulta en DynamoDB usando el índice secundario local (LSI)
         console.log("Consultando reservas para tenant_id:", tenant_id);
 
         const params = {
@@ -109,7 +95,7 @@ exports.getReservationByTenantId = async (event) => {
             body: JSON.stringify({ reservations: reservationsResult.Items }),
         };
     } catch (error) {
-        console.error('Error interno en getReservationsByTenantId:', error);
+        console.error('Error interno en getReservationByTenantId:', error);
         return {
             statusCode: 500,
             body: JSON.stringify({
