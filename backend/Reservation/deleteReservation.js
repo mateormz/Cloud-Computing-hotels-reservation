@@ -1,50 +1,57 @@
-module.exports.deleteReservation = async (event) => {
+const AWS = require('aws-sdk');
+const dynamoDb = new AWS.DynamoDB.DocumentClient();
+
+exports.deleteReservation = async (event) => {
     try {
-        const token = event.headers.Authorization;
-        if (!token) {
+        console.log("Evento recibido:", JSON.stringify(event)); // Log del evento completo
+
+        // Extraer tenant_id y reservation_id desde pathParameters
+        const tenant_id = event.path?.tenant_id;
+        const reservation_id = event.path?.reservation_id;
+
+        // Validar si los parámetros están presentes
+        if (!tenant_id || !reservation_id) {
+            console.error("Error: tenant_id o reservation_id no proporcionado.");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Token no proporcionado' })
+                body: {
+                    error: 'tenant_id o reservation_id no proporcionado',
+                }, // Directo como JSON
             };
         }
 
-        const { tenant_id, id } = event.pathParameters;
+        console.log("Parámetros extraídos: tenant_id =", tenant_id, ", reservation_id =", reservation_id);
 
-        const functionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
-        const payload = {
-            body: { token, tenant_id }
-        };
-
-        const tokenResponse = await lambda.invoke({
-            FunctionName: functionName,
-            InvocationType: 'RequestResponse',
-            Payload: JSON.stringify(payload),
-        }).promise();
-
-        const responseBody = JSON.parse(tokenResponse.Payload);
-        if (responseBody.statusCode !== 200) {
-            return {
-                statusCode: responseBody.statusCode,
-                body: responseBody.body
-            };
-        }
-
+        // Definir parámetros para la eliminación en DynamoDB
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
-            Key: { tenant_id, id }
+            Key: {
+                tenant_id: tenant_id,
+                reservation_id: reservation_id,
+            },
         };
 
-        await dynamoDb.delete(params).promise();
+        // Eliminar la reserva en la base de datos
+        const result = await dynamoDb.delete(params).promise();
 
+        console.log("Reserva eliminada:", result);
+
+        // Responder con éxito
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: 'Reserva eliminada con éxito' })
+            body: {
+                message: 'Reserva eliminada exitosamente',
+            }, // Directo como JSON
         };
     } catch (error) {
-        console.error('Error en deleteReservation:', error);
+        // Manejo de errores
+        console.error("Error interno en deleteReservation:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message })
+            body: {
+                error: 'Error interno del servidor',
+                details: error.message,
+            }, // Directo como JSON
         };
     }
 };
