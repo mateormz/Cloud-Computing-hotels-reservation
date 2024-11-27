@@ -53,20 +53,22 @@ exports.updateReservation = async (event) => {
         // Responder con éxito
         return {
             statusCode: 200,
-            body: JSON.stringify({
+            body: {
                 message: 'Reserva actualizada con éxito',
                 reservation: result.Attributes,
-            }),
+            },
         };
+
     } catch (error) {
         // Manejo de errores
         console.error("Error interno en updateReservation:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({
+            body: {
                 error: 'Error interno del servidor',
                 details: error.message,
-            }),
+            }, // Aquí tampoco se usa JSON.stringify
         };
     }
+
 };
