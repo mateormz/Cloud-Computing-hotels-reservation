@@ -69,6 +69,16 @@ functions:
           method: get
           cors: true
           integration: lambda
+  
+  hotel_readByTenantAndName:
+    handler: readHotelsByTenantAndName.lambda_handler
+    events:
+      - http:
+          path: /hotels/tenant
+          method: get
+          cors: true
+          integration: lambda
+
 
 resources:
   Resources:
@@ -104,7 +114,7 @@ resources:
             KeySchema:
               - AttributeName: hotel_location
                 KeyType: HASH
-              - AttributeName: tenant_id
+              - AttributeName: 
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
