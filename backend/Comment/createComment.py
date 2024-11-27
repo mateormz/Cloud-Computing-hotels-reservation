@@ -1,4 +1,3 @@
-CREATE: 
 import boto3
 import uuid
 from datetime import datetime
