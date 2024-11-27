@@ -1,0 +1,67 @@
+org: d4vidmanu
+service: service-api
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  iam:
+    role: arn:aws:iam::248552829072:role/LabRole
+  memorySize: 1024
+  timeout: 30
+  environment:
+    TABLE_NAME_SERVICIOS: ${sls:stage}-hotel-services
+    INDEXLSI1_SERVICES: tenant-precio-index
+    INDEXGSI1_SERVICES: servicio-tenant-index
+    TABLE_TOKENS: ${sls:stage}-hotel-tokens
+    SERVICE_NAME: service-api
+    STAGE: ${sls:stage}
+
+functions:
+  createService:
+    handler: CreateService.handler
+    events:
+      - http:
+          path: /service/create
+          method: post
+          cors: true
+          integration: lambda
+
+resources:
+  Resources:
+    ServicesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_NAME_SERVICIOS}
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: servicio_nombre
+            AttributeType: S
+          - AttributeName: precio
+            AttributeType: N
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH
+          - AttributeName: servicio_nombre
+            KeyType: RANGE
+        LocalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.INDEXLSI1_SERVICES}
+            KeySchema:
+              - AttributeName: tenant_id
+                KeyType: HASH
+              - AttributeName: precio
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.INDEXGSI1_SERVICES}
+            KeySchema:
+              - AttributeName: servicio_nombre
+                KeyType: HASH
+              - AttributeName: tenant_id
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
