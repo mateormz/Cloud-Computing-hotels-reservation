@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const lambda = new AWS.Lambda();
 
-exports.getReservationsByTenantId = async (event) => {
+exports.getReservationByTenantId = async (event) => {
     try {
         console.log("Evento recibido:", event);
 
