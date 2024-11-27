@@ -4,12 +4,10 @@ const lambda = new AWS.Lambda();
 
 exports.getReservationById = async (event) => {
     try {
-        console.log("Evento recibido:", JSON.stringify(event)); // Log completo del evento
+        console.log("Evento recibido:", JSON.stringify(event)); // Log del evento completo
 
-        // Extraer tenant_id y reservation_id desde pathParameters
-        const tenant_id = event.pathParameters?.tenant_id;
-        const reservation_id = event.pathParameters?.reservation_id;
-
+        // Validación y extracción de tenant_id y reservation_id desde pathParameters
+        const { tenant_id, reservation_id } = event.pathParameters || {};
         if (!tenant_id || !reservation_id) {
             console.error("Error: tenant_id o reservation_id no proporcionado.");
             return {
@@ -17,6 +15,8 @@ exports.getReservationById = async (event) => {
                 body: JSON.stringify({ error: 'tenant_id o reservation_id no proporcionado' }),
             };
         }
+
+        console.log("Parámetros recibidos: tenant_id =", tenant_id, ", reservation_id =", reservation_id);
 
         // Validación del token
         const token = event.headers?.Authorization;
@@ -28,7 +28,7 @@ exports.getReservationById = async (event) => {
             };
         }
 
-        console.log(`Validando token para tenant_id: ${tenant_id}`);
+        console.log("Validando token para tenant_id:", tenant_id);
 
         // Llamar a la función Lambda para validar el token
         const validateTokenFunctionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
@@ -90,7 +90,7 @@ exports.getReservationById = async (event) => {
 
         console.log("Reserva encontrada:", JSON.stringify(reservationResponse.Item));
 
-        // Convertir valores de tipo Decimal a números (si existen)
+        // Convertir valores Decimal a números (si existen)
         const reservation = reservationResponse.Item;
         for (const key in reservation) {
             if (reservation[key]?.constructor?.name === 'Decimal') {
