@@ -2,7 +2,7 @@ const AWS = require('aws-sdk');
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const lambda = new AWS.Lambda();
 
-module.exports.getReservationByTenantId = async (event) => {
+exports.getReservationsByTenantId = async (event) => {
     try {
         console.log("Evento recibido:", event);
 
@@ -59,12 +59,12 @@ module.exports.getReservationByTenantId = async (event) => {
 
         console.log("Token validado correctamente.");
 
-        // Consultar las reservas para el tenant_id usando el índice secundario local (LSI)
+        // Consultar las reservas usando el índice secundario local (LSI)
         console.log("Consultando reservas para tenant_id:", tenant_id);
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
-            IndexName: process.env.INDEXLSI1_RESERVATIONS, // Usar LSI
+            IndexName: process.env.INDEXLSI1_RESERVATIONS, // Usar el índice LSI para consultas optimizadas
             KeyConditionExpression: "tenant_id = :tenant_id",
             ExpressionAttributeValues: {
                 ":tenant_id": tenant_id,
@@ -73,7 +73,6 @@ module.exports.getReservationByTenantId = async (event) => {
 
         const reservationsResult = await dynamoDb.query(params).promise();
 
-        // Validar si no hay reservas
         if (!reservationsResult.Items || reservationsResult.Items.length === 0) {
             return {
                 statusCode: 404,
@@ -89,7 +88,7 @@ module.exports.getReservationByTenantId = async (event) => {
             body: JSON.stringify({ reservations: reservationsResult.Items }),
         };
     } catch (error) {
-        console.error('Error en getReservationByTenantId:', error);
+        console.error('Error en getReservationsByTenantId:', error);
         return {
             statusCode: 500,
             body: JSON.stringify({
