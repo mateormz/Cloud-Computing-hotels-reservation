@@ -4,55 +4,41 @@ import json
 
 def lambda_handler(event, context):
     try:
+        print("Evento recibido:", event)
+
         # Validación de token
         token = event['headers'].get('Authorization')
+        print("Token recibido:", token)
+
         if not token:
+            print("Token no proporcionado")
             return {
                 'statusCode': 400,
                 'body': json.dumps({'error': 'Token no proporcionado'})
             }
 
-        # Validación del token con otra función Lambda
-        function_name = f"{os.environ['SERVICE_NAME']}-{os.environ['STAGE']}-hotel_validateUserToken"
-        payload_string = json.dumps({
-            "body": {
-                "token": token,
-                "tenant_id": "global"  # Validación general
-            }
-        })
-
-        lambda_client = boto3.client('lambda')
-        invoke_response = lambda_client.invoke(
-            FunctionName=function_name,
-            InvocationType='RequestResponse',
-            Payload=payload_string
-        )
-        response = json.loads(invoke_response['Payload'].read())
-
-        if response['statusCode'] != 200:
-            return {
-                'statusCode': response['statusCode'],
-                'body': response['body']
-            }
-
-        # Token válido, continuar con la operación
+        # Token válido
         dynamodb = boto3.resource('dynamodb')
-        table_name = os.environ['TABLE_NAME']
+        table_name = os.environ['TABLE_COMMENTS']
         table = dynamodb.Table(table_name)
+        print("Tabla DynamoDB:", table_name)
 
         tenant_id = event['path']['tenant_id']
         room_id = event['path']['room_id']
         comment_id = event['path']['comment_id']
+        print("Parámetros recibidos - tenant_id:", tenant_id, "room_id:", room_id, "comment_id:", comment_id)
 
         # Validar si el comentario existe antes de eliminarlo
         get_response = table.get_item(
             Key={
                 'tenant_id': tenant_id,
-                'comment_id': comment_id
+                'room_id': room_id
             }
         )
+        print("Respuesta de get_item:", get_response)
 
-        if 'Item' not in get_response or get_response['Item'].get('room_id') != room_id:
+        if 'Item' not in get_response or get_response['Item'].get('comment_id') != comment_id:
+            print("El comentario no existe o comment_id no coincide")
             return {
                 'statusCode': 404,
                 'body': json.dumps({'error': 'El comentario no existe o no coincide'})
@@ -62,17 +48,21 @@ def lambda_handler(event, context):
         table.delete_item(
             Key={
                 'tenant_id': tenant_id,
-                'comment_id': comment_id
+                'room_id': room_id
             },
-            ConditionExpression="room_id = :room_id",
-            ExpressionAttributeValues={":room_id": room_id}
+            ConditionExpression="comment_id = :comment_id",
+            ExpressionAttributeValues={
+                ":comment_id": comment_id
+            }
         )
+        print("Elemento eliminado correctamente")
 
         return {
             'statusCode': 200,
             'body': json.dumps({'message': 'Comentario eliminado exitosamente'})
         }
     except Exception as e:
+        print("Error durante la eliminación:", str(e))
         return {
             'statusCode': 500,
             'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
