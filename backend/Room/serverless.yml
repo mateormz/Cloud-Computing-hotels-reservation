@@ -1,5 +1,5 @@
 org: joelm2405
-service: hotel-api
+service: room-api
 
 provider:
   name: aws
@@ -9,115 +9,116 @@ provider:
   memorySize: 1024
   timeout: 30
   environment:
-    TABLE_HOTELS: ${sls:stage}-hotel-hotels
-    INDEXLSI1_HOTELS: tenant-name-index
-    INDEXGSI1_HOTELS: hotel_location-index
-    SERVICE_NAME: hotel-api
+    TABLE_ROOMS: ${sls:stage}-hotel-rooms
+    INDEXLSI1_ROOMS: tenant-room_name-index
+    INDEXGSI1_ROOMS: is_available-index
+    SERVICE_NAME: user-api  # Nombre del servicio que contiene la validación de token
     STAGE: ${sls:stage}
 
 functions:
-  hotel_create:
-    handler: createHotel.lambda_handler
+  room_create:
+    handler: createRoom.lambda_handler
     events:
       - http:
-          path: /hotel/create
+          path: /room/create
           method: post
           cors: true
           integration: lambda
-
-  hotel_read:
-    handler: readHotel.lambda_handler
+          
+  room_update:
+    handler: updateRoom.lambda_handler
     events:
       - http:
-          path: /hotel/{tenant_id}/{hotel_id}
-          method: get
-          cors: true
-          integration: lambda
-
-  hotel_update:
-    handler: updateHotel.lambda_handler
-    events:
-      - http:
-          path: /hotel/{tenant_id}/{hotel_id}
+          path: /room/{tenant_id}/{room_id}
           method: put
           cors: true
           integration: lambda
 
-  hotel_delete:
-    handler: deleteHotel.lambda_handler
+  room_delete:
+    handler: deleteRoom.lambda_handler
     events:
       - http:
-          path: /hotel/{tenant_id}/{hotel_id}
+          path: /room/{tenant_id}/{room_id}
           method: delete
           cors: true
           integration: lambda
 
-  hotel_getAll:
-    handler: getAllHotels.lambda_handler
+  room_getAllByTenant:
+    handler: getAllRoomsByTenant.lambda_handler
     events:
       - http:
-          path: /hotels
+          path: /rooms/{tenant_id}
           method: get
           cors: true
           integration: lambda
 
-  hotel_readByLocation:
-    handler: readHotelsByLocation.lambda_handler
+  room_toggleAvailability:
+    handler: toggleAvailability.lambda_handler
     events:
       - http:
-          path: /hotels/location
-          method: get
+          path: /room/toggleAvailability/{tenant_id}/{room_id}
+          method: post
           cors: true
           integration: lambda
-  
-  hotel_readByTenantAndName:
-    handler: readHotelsByTenantAndName.lambda_handler
+
+  room_getAll:
+    handler: getAllRooms.lambda_handler
     events:
       - http:
-          path: /hotels/tenant
+          path: /rooms/all
           method: get
           cors: true
           integration: lambda
 
-
+  # Nueva función para obtener una habitación por su ID
+  room_getById:
+    handler: getRoomById.lambda_handler
+    events:
+      - http:
+          path: /room/{tenant_id}/{room_id}
+          method: get
+          cors: true
+          integration: lambda
+          
 resources:
   Resources:
-    HotelsTable:
+    RoomsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.TABLE_HOTELS}
+        TableName: ${self:provider.environment.TABLE_ROOMS}
         AttributeDefinitions:
           - AttributeName: tenant_id
             AttributeType: S
-          - AttributeName: hotel_id
+          - AttributeName: room_id
             AttributeType: S
-          - AttributeName: hotel_name
+          - AttributeName: room_name
             AttributeType: S
-          - AttributeName: hotel_location
+          - AttributeName: availability
             AttributeType: S
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
-          - AttributeName: hotel_id
+          - AttributeName: room_id
             KeyType: RANGE
         LocalSecondaryIndexes:
-          - IndexName: ${self:provider.environment.INDEXLSI1_HOTELS}
+          - IndexName: ${self:provider.environment.INDEXLSI1_ROOMS}
             KeySchema:
               - AttributeName: tenant_id
                 KeyType: HASH
-              - AttributeName: hotel_name
+              - AttributeName: room_name
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
         GlobalSecondaryIndexes:
-          - IndexName: ${self:provider.environment.INDEXGSI1_HOTELS}
+          - IndexName: ${self:provider.environment.INDEXGSI1_ROOMS}
             KeySchema:
-              - AttributeName: hotel_location
+              - AttributeName: availability
                 KeyType: HASH
               - AttributeName: tenant_id
-                KeyType: RANGE 
+                KeyType: RANGE
             Projection:
               ProjectionType: ALL
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
+
