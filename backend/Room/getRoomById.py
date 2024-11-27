@@ -1,5 +1,4 @@
 import boto3
-from boto3.dynamodb.conditions import Key
 import os
 import json
 
@@ -67,6 +66,7 @@ def lambda_handler(event, context):
                 'body': '{"error": "Room not found"}'
             }
 
+        # Retornar la respuesta tal cual, manteniendo `price_per_night` como string
         return {
             'statusCode': 200,
             'body': json.dumps(response['Item'])
