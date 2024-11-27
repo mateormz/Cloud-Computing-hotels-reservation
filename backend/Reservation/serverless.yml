@@ -18,7 +18,7 @@ provider:
 
 functions:
   reservation_create:
-    handler: handler.createReservation
+    handler: createReservation.createReservation
     events:
       - http:
           path: /reservation/create
@@ -27,7 +27,7 @@ functions:
           integration: lambda
 
   reservation_update:
-    handler: handler.updateReservation
+    handler: updateReservation.updateReservation
     events:
       - http:
           path: /reservation/{tenant_id}/{reservation_id}
@@ -36,7 +36,7 @@ functions:
           integration: lambda
 
   reservation_delete:
-    handler: handler.deleteReservation
+    handler: deleteReservation.deleteReservation
     events:
       - http:
           path: /reservation/{tenant_id}/{reservation_id}
@@ -45,7 +45,7 @@ functions:
           integration: lambda
 
   reservation_getById:
-    handler: handler.getReservationById
+    handler: getReservationById.getReservationById
     events:
       - http:
           path: /reservation/{tenant_id}/{reservation_id}
@@ -54,7 +54,7 @@ functions:
           integration: lambda
 
   reservation_getAllByTenant:
-    handler: handler.getReservationsByTenantId
+    handler: getReservationsByTenantId.getReservationsByTenantId
     events:
       - http:
           path: /reservations/{tenant_id}
