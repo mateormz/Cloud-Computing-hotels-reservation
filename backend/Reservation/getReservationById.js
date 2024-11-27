@@ -1,33 +1,38 @@
 const AWS = require('aws-sdk');
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
-
-const tableName = process.env.TABLE_RESERVATIONS;
-const validateTokenFunctionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
+const lambda = new AWS.Lambda();
 
 exports.getReservationById = async (event) => {
     try {
+        console.log("Evento recibido:", JSON.stringify(event)); // Log del evento completo
+
         // Extraer tenant_id y reservation_id de los pathParameters
-        const { tenant_id, reservation_id } = event.pathParameters;
+        const tenant_id = event.pathParameters?.tenant_id;
+        const reservation_id = event.pathParameters?.reservation_id;
 
         if (!tenant_id || !reservation_id) {
+            console.error("Error: tenant_id o reservation_id no proporcionado.");
             return {
                 statusCode: 400,
                 body: JSON.stringify({ error: 'tenant_id o reservation_id no proporcionado' }),
             };
         }
 
-        // Validación de token
-        const token = event.headers.Authorization;
+        // Validación del token
+        const token = event.headers?.Authorization;
         if (!token) {
+            console.error("Error: Token no proporcionado.");
             return {
                 statusCode: 400,
                 body: JSON.stringify({ error: 'Token no proporcionado' }),
             };
         }
 
-        // Llamar a la función Lambda para validar el token
-        const lambda = new AWS.Lambda();
-        const validateTokenPayload = {
+        console.log("Validando token para tenant_id:", tenant_id);
+
+        // Llamar a la función de validación del token
+        const validateTokenFunctionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
+        const tokenPayload = {
             body: {
                 token: token,
                 tenant_id: tenant_id,
@@ -38,38 +43,52 @@ exports.getReservationById = async (event) => {
             .invoke({
                 FunctionName: validateTokenFunctionName,
                 InvocationType: 'RequestResponse',
-                Payload: JSON.stringify(validateTokenPayload),
+                Payload: JSON.stringify(tokenPayload),
             })
             .promise();
 
-        const validateTokenResult = JSON.parse(validateTokenResponse.Payload);
+        const validateTokenBody = JSON.parse(validateTokenResponse.Payload);
+        console.log("Respuesta de validación del token:", JSON.stringify(validateTokenBody));
 
-        if (validateTokenResult.statusCode !== 200) {
+        if (validateTokenBody.statusCode !== 200) {
+            const parsedBody =
+                typeof validateTokenBody.body === 'string'
+                    ? JSON.parse(validateTokenBody.body)
+                    : validateTokenBody.body;
+
+            console.error("Error en la validación del token:", parsedBody.error || "Token inválido");
             return {
-                statusCode: validateTokenResult.statusCode,
-                body: validateTokenResult.body,
+                statusCode: validateTokenBody.statusCode,
+                body: JSON.stringify({ error: parsedBody.error || 'Token inválido' }),
             };
         }
 
-        // Token válido, proceder a buscar la reserva
-        const reservationResponse = await dynamoDb
-            .get({
-                TableName: tableName,
-                Key: {
-                    tenant_id: tenant_id,
-                    reservation_id: reservation_id,
-                },
-            })
-            .promise();
+        console.log("Token validado correctamente.");
+
+        // Consultar la reserva en DynamoDB
+        console.log("Consultando reserva para tenant_id:", tenant_id, "reservation_id:", reservation_id);
+
+        const params = {
+            TableName: process.env.TABLE_RESERVATIONS,
+            Key: {
+                tenant_id: tenant_id,
+                reservation_id: reservation_id,
+            },
+        };
+
+        const reservationResponse = await dynamoDb.get(params).promise();
 
         if (!reservationResponse.Item) {
+            console.warn("Reserva no encontrada para tenant_id:", tenant_id, "reservation_id:", reservation_id);
             return {
                 statusCode: 404,
                 body: JSON.stringify({ error: 'Reserva no encontrada' }),
             };
         }
 
-        // Convertir valores de tipo Decimal a números si es necesario
+        console.log("Reserva encontrada:", JSON.stringify(reservationResponse.Item));
+
+        // Convertir valores Decimal a números si existen
         const reservation = reservationResponse.Item;
         for (const key in reservation) {
             if (reservation[key]?.constructor?.name === 'Decimal') {
@@ -77,15 +96,19 @@ exports.getReservationById = async (event) => {
             }
         }
 
+        // Preparar respuesta
         return {
             statusCode: 200,
-            body: JSON.stringify(reservation),
+            body: reservation, // Respuesta directa en formato JSON
         };
     } catch (error) {
-        console.error('Error interno del servidor:', error);
+        console.error('Error interno en getReservationById:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message }),
+            body: JSON.stringify({
+                error: 'Error interno del servidor',
+                details: error.message,
+            }),
         };
     }
 };
