@@ -4,19 +4,9 @@ const lambda = new AWS.Lambda();
 
 exports.getReservationById = async (event) => {
     try {
-        console.log("Evento recibido:", JSON.stringify(event)); // Log del evento completo
+        console.log("Evento recibido:", JSON.stringify(event)); // Log completo del evento
 
-        // Validación del token
-        const token = event.headers?.Authorization;
-        if (!token) {
-            console.error("Error: Token no proporcionado.");
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ error: 'Token no proporcionado' }),
-            };
-        }
-
-        // Validación y extracción de tenant_id y reservation_id desde los parámetros de la ruta
+        // Extraer tenant_id y reservation_id desde pathParameters
         const tenant_id = event.pathParameters?.tenant_id;
         const reservation_id = event.pathParameters?.reservation_id;
 
@@ -25,6 +15,16 @@ exports.getReservationById = async (event) => {
             return {
                 statusCode: 400,
                 body: JSON.stringify({ error: 'tenant_id o reservation_id no proporcionado' }),
+            };
+        }
+
+        // Validación del token
+        const token = event.headers?.Authorization;
+        if (!token) {
+            console.error("Error: Token no proporcionado.");
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'Token no proporcionado' }),
             };
         }
 
@@ -39,7 +39,7 @@ exports.getReservationById = async (event) => {
             },
         };
 
-        console.log("Enviando payload para validar token:", JSON.stringify(tokenPayload));
+        console.log("Payload enviado para validar token:", JSON.stringify(tokenPayload));
 
         const validateTokenResponse = await lambda
             .invoke({
@@ -67,8 +67,8 @@ exports.getReservationById = async (event) => {
 
         console.log("Token validado correctamente.");
 
-        // Consultar la reserva en DynamoDB
-        console.log("Consultando reserva en DynamoDB con tenant_id:", tenant_id, "y reservation_id:", reservation_id);
+        // Consultar la reserva en DynamoDB por tenant_id y reservation_id
+        console.log(`Consultando reserva en DynamoDB para tenant_id: ${tenant_id}, reservation_id: ${reservation_id}`);
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
@@ -81,7 +81,7 @@ exports.getReservationById = async (event) => {
         const reservationResponse = await dynamoDb.get(params).promise();
 
         if (!reservationResponse.Item) {
-            console.warn("Reserva no encontrada para tenant_id:", tenant_id, "reservation_id:", reservation_id);
+            console.warn(`Reserva no encontrada para tenant_id: ${tenant_id}, reservation_id: ${reservation_id}`);
             return {
                 statusCode: 404,
                 body: JSON.stringify({ error: 'Reserva no encontrada' }),
@@ -90,20 +90,18 @@ exports.getReservationById = async (event) => {
 
         console.log("Reserva encontrada:", JSON.stringify(reservationResponse.Item));
 
-        // Preparar la respuesta con conversión de tipos si es necesario
+        // Convertir valores de tipo Decimal a números (si existen)
         const reservation = reservationResponse.Item;
-
-        // Convertir valores Decimal a números
         for (const key in reservation) {
             if (reservation[key]?.constructor?.name === 'Decimal') {
                 reservation[key] = Number(reservation[key]);
             }
         }
 
-        // Devolver la reserva en formato JSON
+        // Preparar respuesta
         return {
             statusCode: 200,
-            body: JSON.stringify(reservation),
+            body: JSON.stringify(reservation), // Respuesta directa en formato JSON
         };
     } catch (error) {
         console.error("Error interno en getReservationById:", error);
