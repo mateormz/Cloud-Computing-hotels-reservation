@@ -1,4 +1,3 @@
-
 import boto3
 from boto3.dynamodb.conditions import Key
 import os
@@ -14,6 +13,7 @@ def lambda_handler(event, context):
                 'body': json.dumps({'error': 'Token no proporcionado'})
             }
 
+        # Validación del token con otra función Lambda
         function_name = f"{os.environ['SERVICE_NAME']}-{os.environ['STAGE']}-hotel_validateUserToken"
         payload_string = json.dumps({
             "body": {
@@ -38,23 +38,23 @@ def lambda_handler(event, context):
 
         # Token válido, continuar con la operación
         dynamodb = boto3.resource('dynamodb')
-        table_name = os.environ['TABLE_COMMENTS']
+        table_name = os.environ['TABLE_NAME']
         table = dynamodb.Table(table_name)
 
-        tenant_id = event['path']['tenant_id']
         user_id = event['path']['user_id']
 
         response = table.query(
-            IndexName="user-comment-index",
-            KeyConditionExpression=Key('tenant_id').eq(tenant_id) & Key('user_id').eq(user_id)
+            IndexName="user-created-index",
+            KeyConditionExpression=Key('user_id').eq(user_id),
+            ScanIndexForward=False  # Orden descendente
         )
 
         return {
             'statusCode': 200,
-            'body': {'comments': response.get('Items', [])}
+            'body': json.dumps({'comments': response.get('Items', [])})
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': {'error': 'Error interno del servidor', 'details': str(e)}
+            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
         }
