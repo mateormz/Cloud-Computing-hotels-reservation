@@ -25,6 +25,16 @@ functions:
           cors: true
           integration: lambda
 
+  functions:
+  service_getById:
+    handler: getServiceById.handler
+    events:
+      - http:
+          path: /service/{tenant_id}/{service_id}
+          method: get
+          cors: true
+          integration: lambda
+
   service_update:
     handler: updateService.handler
     events:
