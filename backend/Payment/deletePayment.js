@@ -1,43 +1,58 @@
 const AWS = require('aws-sdk');
+const lambda = new AWS.Lambda();
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
-exports.deletePayment = async (event) => {
+module.exports.deletePayment = async (event) => {
     try {
-        const payment_id = event.pathParameters.payment_id;
-        const tenant_id = event.pathParameters.tenant_id;
+        const token = event.headers.Authorization;
+        const tenant_id = event.pathParameters?.tenant_id;
+        const payment_id = event.pathParameters?.payment_id;
 
-        // Validación de token
-        const token = event.headers?.Authorization;
-        if (!token) {
+        if (!token || !tenant_id || !payment_id) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Token no proporcionado' }),
+                body: JSON.stringify({ error: 'Token, tenant_id o payment_id no proporcionado' })
             };
         }
 
-        // Validar token
-        const validateTokenResponse = await validateToken(token, tenant_id);
-        if (validateTokenResponse.statusCode !== 200) {
-            return validateTokenResponse;
+        // Validar el token del usuario llamando a la Lambda correspondiente
+        const validateTokenFunction = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
+        const tokenPayload = { body: { token, tenant_id } };
+        const tokenResponse = await lambda.invoke({
+            FunctionName: validateTokenFunction,
+            InvocationType: 'RequestResponse',
+            Payload: JSON.stringify(tokenPayload)
+        }).promise();
+
+        const tokenResponseBody = JSON.parse(tokenResponse.Payload);
+        if (tokenResponseBody.statusCode !== 200) {
+            return {
+                statusCode: tokenResponseBody.statusCode,
+                body: tokenResponseBody.body
+            };
         }
 
-        // Eliminar el pago
+        console.log("Token validado correctamente.");
+
+        // Eliminar el pago de DynamoDB
         const params = {
             TableName: process.env.TABLE_PAYMENTS,
-            Key: { tenant_id, payment_id },
+            Key: { tenant_id, payment_id }
         };
+
         await dynamoDb.delete(params).promise();
+        console.log(`Pago ${payment_id} eliminado exitosamente`);
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: 'Pago eliminado con éxito' }),
+            body: JSON.stringify({ message: 'Pago eliminado con éxito' })
         };
 
     } catch (error) {
         console.error('Error en deletePayment:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message }),
+            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message })
         };
     }
 };

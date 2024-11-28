@@ -1,30 +1,43 @@
 const AWS = require('aws-sdk');
+const lambda = new AWS.Lambda();
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
-exports.getPaymentById = async (event) => {
+module.exports.getPaymentById = async (event) => {
     try {
-        const payment_id = event.pathParameters.payment_id;
-        const tenant_id = event.pathParameters.tenant_id;
+        const token = event.headers.Authorization;
+        const tenant_id = event.pathParameters?.tenant_id;
+        const payment_id = event.pathParameters?.payment_id;
 
-        // Validación de token
-        const token = event.headers?.Authorization;
-        if (!token) {
+        if (!token || !tenant_id || !payment_id) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Token no proporcionado' }),
+                body: JSON.stringify({ error: 'Token, tenant_id o payment_id no proporcionado' })
             };
         }
 
-        // Validar token
-        const validateTokenResponse = await validateToken(token, tenant_id);
-        if (validateTokenResponse.statusCode !== 200) {
-            return validateTokenResponse;
+        // Validar el token del usuario llamando a la Lambda correspondiente
+        const validateTokenFunction = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
+        const tokenPayload = { body: { token, tenant_id } };
+        const tokenResponse = await lambda.invoke({
+            FunctionName: validateTokenFunction,
+            InvocationType: 'RequestResponse',
+            Payload: JSON.stringify(tokenPayload)
+        }).promise();
+
+        const tokenResponseBody = JSON.parse(tokenResponse.Payload);
+        if (tokenResponseBody.statusCode !== 200) {
+            return {
+                statusCode: tokenResponseBody.statusCode,
+                body: tokenResponseBody.body
+            };
         }
 
-        // Obtener el pago
+        console.log("Token validado correctamente.");
+
+        // Consultar el pago por payment_id y tenant_id
         const params = {
             TableName: process.env.TABLE_PAYMENTS,
-            Key: { tenant_id, payment_id },
+            Key: { tenant_id, payment_id }
         };
 
         const result = await dynamoDb.get(params).promise();
@@ -32,20 +45,20 @@ exports.getPaymentById = async (event) => {
         if (!result.Item) {
             return {
                 statusCode: 404,
-                body: JSON.stringify({ error: 'Pago no encontrado' }),
+                body: JSON.stringify({ error: 'Pago no encontrado' })
             };
         }
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ payment: result.Item }),
+            body: JSON.stringify(result.Item)
         };
 
     } catch (error) {
         console.error('Error en getPaymentById:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message }),
+            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message })
         };
     }
 };

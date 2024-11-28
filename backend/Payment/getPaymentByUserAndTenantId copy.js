@@ -1,59 +1,69 @@
 const AWS = require('aws-sdk');
+const lambda = new AWS.Lambda();
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
-exports.getPaymentsByDate = async (event) => {
+module.exports.getPaymentByUserAndTenantId = async (event) => {
     try {
-        const tenant_id = event.pathParameters.tenant_id;
-        const start_date = event.queryStringParameters.start_date; // Fecha de inicio
-        const end_date = event.queryStringParameters.end_date; // Fecha de fin
+        const token = event.headers.Authorization;
+        const tenant_id = event.pathParameters?.tenant_id;
+        const user_id = event.pathParameters?.user_id;
+        const payment_id = event.pathParameters?.payment_id;
 
-        // Validación de token
-        const token = event.headers?.Authorization;
-        if (!token) {
+        if (!token || !tenant_id || !user_id || !payment_id) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Token no proporcionado' }),
+                body: JSON.stringify({ error: 'Token, tenant_id, user_id o payment_id no proporcionado' })
             };
         }
 
-        // Validar token
-        const validateTokenResponse = await validateToken(token, tenant_id);
-        if (validateTokenResponse.statusCode !== 200) {
-            return validateTokenResponse;
-        }
+        // Validar el token del usuario llamando a la Lambda correspondiente
+        const validateTokenFunction = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
+        const tokenPayload = { body: { token, tenant_id } };
+        const tokenResponse = await lambda.invoke({
+            FunctionName: validateTokenFunction,
+            InvocationType: 'RequestResponse',
+            Payload: JSON.stringify(tokenPayload)
+        }).promise();
 
-        // Verificamos si las fechas están definidas
-        if (!start_date || !end_date) {
+        const tokenResponseBody = JSON.parse(tokenResponse.Payload);
+        if (tokenResponseBody.statusCode !== 200) {
             return {
-                statusCode: 400,
-                body: JSON.stringify({ error: 'Se deben proporcionar las fechas de inicio y fin' }),
+                statusCode: tokenResponseBody.statusCode,
+                body: tokenResponseBody.body
             };
         }
 
-        // Consultar pagos por tenant_id y payment_date usando el LSI "tenant-payment-date-index"
+        console.log("Token validado correctamente.");
+
+        // Consultar el pago por payment_id, user_id y tenant_id
         const params = {
             TableName: process.env.TABLE_PAYMENTS,
-            IndexName: 'tenant-payment-date-index',  // Usamos el LSI creado en el serverless.yml
-            KeyConditionExpression: "tenant_id = :tenant_id and payment_date BETWEEN :start_date AND :end_date",
+            Key: { tenant_id, payment_id },
+            FilterExpression: 'user_id = :user_id',
             ExpressionAttributeValues: {
-                ":tenant_id": tenant_id,
-                ":start_date": start_date,
-                ":end_date": end_date,
-            },
+                ':user_id': user_id
+            }
         };
 
-        const result = await dynamoDb.query(params).promise();
+        const result = await dynamoDb.get(params).promise();
+
+        if (!result.Item) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({ error: 'Pago no encontrado' })
+            };
+        }
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ payments: result.Items }),
+            body: JSON.stringify(result.Item)
         };
 
     } catch (error) {
-        console.error('Error en getPaymentsByDate:', error);
+        console.error('Error en getPaymentByUserAndTenantId:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message }),
+            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message })
         };
     }
 };

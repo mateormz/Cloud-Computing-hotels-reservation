@@ -1,24 +1,21 @@
-org: joelm2405
+org: aron18
 service: payment-api
 
 provider:
   name: aws
   runtime: nodejs20.x
   iam:
-    role: arn:aws:iam::187978737113:role/LabRole
+    role: arn:aws:iam::637423363021:role/LabRole
   memorySize: 1024
   timeout: 30
   environment:
     TABLE_PAYMENTS: ${sls:stage}-hotel-payments
-    TABLE_ROOMS: ${sls:stage}-hotel-rooms
-    TABLE_SERVICES: ${sls:stage}-hotel-services
-    TABLE_RESERVATIONS: ${sls:stage}-hotel-reservations
-    SERVICE_NAME_USER: user-api
+    SERVICE_NAME: reservation-api  # Nombre del servicio que contiene la validación de token
     STAGE: ${sls:stage}
 
 functions:
-  createPayment:
-    handler: createPayment.createPayment
+  payment_create:
+    handler: src/payment.createPayment
     events:
       - http:
           path: /payment/create
@@ -26,17 +23,17 @@ functions:
           cors: true
           integration: lambda
 
-  deletePayment:
-    handler: deletePayment.deletePayment
+  payment_delete:
+    handler: src/payment.deletePayment
     events:
       - http:
-          path: /payment/delete/{tenant_id}/{payment_id}
+          path: /payment/{tenant_id}/{payment_id}
           method: delete
           cors: true
           integration: lambda
 
-  getAllPayments:
-    handler: getAllPayments.getAllPayments
+  payment_getAll:
+    handler: src/payment.getAllPayments
     events:
       - http:
           path: /payments/{tenant_id}
@@ -44,8 +41,8 @@ functions:
           cors: true
           integration: lambda
 
-  getPaymentById:
-    handler: getPaymentById.getPaymentById
+  payment_getById:
+    handler: src/payment.getPaymentById
     events:
       - http:
           path: /payment/{tenant_id}/{payment_id}
@@ -53,11 +50,11 @@ functions:
           cors: true
           integration: lambda
 
-  getPaymentByUserAndTenantId:
-    handler: getPaymentByUserAndTenantId.getPaymentByUserAndTenantId
+  payment_getByUserAndTenantId:
+    handler: src/payment.getPaymentByUserAndTenantId
     events:
       - http:
-          path: /payment/{tenant_id}/user/{user_id}  
+          path: /payments/{tenant_id}/{user_id}
           method: get
           cors: true
           integration: lambda
@@ -75,31 +72,13 @@ resources:
             AttributeType: S
           - AttributeName: user_id
             AttributeType: S
-          - AttributeName: payment_date  
-            AttributeType: S  
+          - AttributeName: reservation_id
+            AttributeType: S
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
           - AttributeName: payment_id
             KeyType: RANGE
-        GlobalSecondaryIndexes:
-          - IndexName: tenant-user-id-index
-            KeySchema:
-              - AttributeName: tenant_id
-                KeyType: HASH
-              - AttributeName: user_id
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
-        LocalSecondaryIndexes:
-          - IndexName: tenant-payment-date-index
-            KeySchema:
-              - AttributeName: tenant_id
-                KeyType: HASH
-              - AttributeName: payment_date
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true

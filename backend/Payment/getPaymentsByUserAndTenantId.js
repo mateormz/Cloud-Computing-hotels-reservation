@@ -2,15 +2,16 @@ const AWS = require('aws-sdk');
 const lambda = new AWS.Lambda();
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
-module.exports.getAllPayments = async (event) => {
+module.exports.getPaymentsByUserAndTenantId = async (event) => {
     try {
         const token = event.headers.Authorization;
         const tenant_id = event.pathParameters?.tenant_id;
+        const user_id = event.pathParameters?.user_id;
 
-        if (!token || !tenant_id) {
+        if (!token || !tenant_id || !user_id) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Token o tenant_id no proporcionado' })
+                body: JSON.stringify({ error: 'Token, tenant_id o user_id no proporcionado' })
             };
         }
 
@@ -33,16 +34,25 @@ module.exports.getAllPayments = async (event) => {
 
         console.log("Token validado correctamente.");
 
-        // Consultar los pagos del tenant en DynamoDB
+        // Consultar todos los pagos por user_id y tenant_id
         const params = {
             TableName: process.env.TABLE_PAYMENTS,
             KeyConditionExpression: 'tenant_id = :tenant_id',
+            FilterExpression: 'user_id = :user_id',
             ExpressionAttributeValues: {
-                ':tenant_id': tenant_id
+                ':tenant_id': tenant_id,
+                ':user_id': user_id
             }
         };
 
         const result = await dynamoDb.query(params).promise();
+
+        if (result.Items.length === 0) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({ error: 'No se encontraron pagos para este usuario' })
+            };
+        }
 
         return {
             statusCode: 200,
@@ -50,7 +60,7 @@ module.exports.getAllPayments = async (event) => {
         };
 
     } catch (error) {
-        console.error('Error en getAllPayments:', error);
+        console.error('Error en getPaymentsByUserAndTenantId:', error);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: 'Error interno del servidor', details: error.message })
