@@ -71,10 +71,6 @@ resources:
             AttributeType: S
           - AttributeName: payment_id
             AttributeType: S
-          - AttributeName: user_id
-            AttributeType: S
-          - AttributeName: reservation_id
-            AttributeType: S
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
@@ -84,7 +80,7 @@ resources:
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
         GlobalSecondaryIndexes:
-          - IndexName: user_id-index
+          - IndexName: user_id-tenant_id-index
             KeySchema:
               - AttributeName: user_id
                 KeyType: HASH
@@ -92,5 +88,3 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
-
-    # Si tienes otros recursos, añádelos aquí.
