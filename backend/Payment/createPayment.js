@@ -35,7 +35,7 @@ module.exports.createPayment = async (event) => {
         }
 
         // 1. Obtener la reserva con getReservationById
-        const getReservationFunction = `${process.env.SERVICE_NAME_RESERVATION}-${process.env.STAGE}-getReservationById`;
+        const getReservationFunction = `${process.env.SERVICE_NAME_RESERVATION}-${process.env.STAGE}-reservation_getById`;
         const reservationPayload = { path: { tenant_id, reservation_id } };
         const reservationResponse = await lambda.invoke({
             FunctionName: getReservationFunction,
