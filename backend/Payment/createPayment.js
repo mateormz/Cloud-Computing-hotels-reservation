@@ -143,17 +143,18 @@ module.exports.createPayment = async (event) => {
             TableName: process.env.TABLE_PAYMENTS,
             Item: {
                 tenant_id,
-                user_id,
+                user_id, // Asegúrate de incluir el user_id aquí
                 payment_id,
                 reservation_id,
-                monto_pago: monto_pago.toFixed(2),  // Guardamos el monto con 2 decimales
-                status: 'completed',  // Estado actualizado a "completed"
+                monto_pago: monto_pago.toFixed(2),
+                status: 'completed',
                 created_at: new Date().toISOString()
             }
         };
-
+        
         // Guardar el pago en DynamoDB
         await dynamoDb.put(paymentParams).promise();
+        
 
         return {
             statusCode: 200,
