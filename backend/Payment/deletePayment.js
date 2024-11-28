@@ -6,8 +6,8 @@ module.exports.deletePayment = async (event) => {
     try {
         // Obtener parámetros del evento
         const token = event.headers?.Authorization;
-        const tenant_id = event.pathParameters?.tenant_id;
-        const payment_id = event.pathParameters?.payment_id;
+        const tenant_id = event.path?.tenant_id;
+        const payment_id = event.path?.payment_id;
 
         // Verificar que todos los parámetros necesarios estén presentes
         if (!token || !tenant_id || !payment_id) {

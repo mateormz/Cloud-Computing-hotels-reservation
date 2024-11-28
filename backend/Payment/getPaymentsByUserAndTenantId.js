@@ -5,8 +5,8 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 module.exports.getPaymentsByUserAndTenantId = async (event) => {
     try {
         const token = event.headers?.Authorization; // Token enviado en los headers
-        const tenant_id = event.pathParameters?.tenant_id;  // tenant_id pasado en la URL
-        const user_id = event.pathParameters?.user_id;  // user_id pasado en la URL
+        const tenant_id = event.path?.tenant_id;  // tenant_id pasado en la URL
+        const user_id = event.path?.user_id;  // user_id pasado en la URL
 
         // Verificar que todos los parámetros estén presentes
         if (!token || !tenant_id || !user_id) {
