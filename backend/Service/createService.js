@@ -3,14 +3,14 @@ const { v4: uuidv4 } = require("uuid"); // Usamos UUID para generar un ID único
 
 exports.handler = async (event) => {
     try {
-        console.log("Evento recibido:", JSON.stringify(event));
+        console.log("Evento recibido:", event);
 
         const token = event.headers?.Authorization;
         if (!token) {
             console.log("Error: Token no proporcionado.");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: "Token no proporcionado" }),
+                body: { error: "Token no proporcionado" },
             };
         }
 
@@ -21,7 +21,7 @@ exports.handler = async (event) => {
             console.error("Error al parsear event.body:", event.body);
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: "El cuerpo de la solicitud no es un JSON válido." }),
+                body: { error: "El cuerpo de la solicitud no es un JSON válido." },
             };
         }
 
@@ -31,9 +31,9 @@ exports.handler = async (event) => {
             console.log("Error: Faltan campos requeridos.");
             return {
                 statusCode: 400,
-                body: JSON.stringify({
+                body: {
                     error: "Faltan campos requeridos: tenant_id, service_category, service_name, descripcion o precio",
-                }),
+                },
             };
         }
 
@@ -53,7 +53,7 @@ exports.handler = async (event) => {
         if (tokenResponsePayload.statusCode === 403) {
             return {
                 statusCode: 403,
-                body: JSON.stringify({ error: "Acceso no autorizado - Token inválido o expirado" }),
+                body: { error: "Acceso no autorizado - Token inválido o expirado" },
             };
         }
 
@@ -78,9 +78,9 @@ exports.handler = async (event) => {
         if (queryResult.Items && queryResult.Items.length > 0) {
             return {
                 statusCode: 409, // Conflict
-                body: JSON.stringify({
+                body: {
                     error: `El servicio '${service_name}' ya existe para el tenant '${tenant_id}'`,
-                }),
+                },
             };
         }
 
@@ -105,18 +105,18 @@ exports.handler = async (event) => {
 
         return {
             statusCode: 200,
-            body: JSON.stringify({
+            body: {
                 message: "Servicio creado con éxito",
                 service_id,
                 service_name,
                 service_category,
-            }),
+            },
         };
     } catch (error) {
         console.error("Error inesperado:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "Error interno del servidor", details: error.message }),
+            body: { error: "Error interno del servidor", details: error.message },
         };
     }
 };
