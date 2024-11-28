@@ -25,14 +25,14 @@ exports.handler = async (event) => {
             };
         }
 
-        const { tenant_id, service_category, servicio_nombre, descripcion, precio } = body;
+        const { tenant_id, service_category, service_name, descripcion, precio } = body;
 
-        if (!tenant_id || !service_category || !servicio_nombre || !descripcion || !precio) {
+        if (!tenant_id || !service_category || !service_name || !descripcion || !precio) {
             console.log("Error: Faltan campos requeridos.");
             return {
                 statusCode: 400,
                 body: JSON.stringify({
-                    error: "Faltan campos requeridos: tenant_id, service_category, servicio_nombre, descripcion o precio",
+                    error: "Faltan campos requeridos: tenant_id, service_category, service_name, descripcion o precio",
                 }),
             };
         }
@@ -65,10 +65,10 @@ exports.handler = async (event) => {
         const queryParams = {
             TableName: tableName,
             IndexName: indexName,
-            KeyConditionExpression: "tenant_id = :tenant_id AND servicio_nombre = :servicio_nombre",
+            KeyConditionExpression: "tenant_id = :tenant_id AND service_name = :service_name",
             ExpressionAttributeValues: {
                 ":tenant_id": tenant_id,
-                ":servicio_nombre": servicio_nombre,
+                ":service_name": service_name,
             },
         };
 
@@ -79,7 +79,7 @@ exports.handler = async (event) => {
             return {
                 statusCode: 409, // Conflict
                 body: JSON.stringify({
-                    error: `El servicio '${servicio_nombre}' ya existe para el tenant '${tenant_id}'`,
+                    error: `El servicio '${service_name}' ya existe para el tenant '${tenant_id}'`,
                 }),
             };
         }
@@ -94,21 +94,21 @@ exports.handler = async (event) => {
                 tenant_id,
                 service_id, // Agregamos el ID único del servicio
                 service_category,
-                servicio_nombre,
+                service_name,
                 descripcion,
                 precio: precio.toString(), // Convertir a string para DynamoDB
             },
         };
 
         await dynamodb.put(putParams).promise();
-        console.log("Servicio creado con éxito:", servicio_nombre);
+        console.log("Servicio creado con éxito:", service_name);
 
         return {
             statusCode: 200,
             body: JSON.stringify({
                 message: "Servicio creado con éxito",
                 service_id,
-                servicio_nombre,
+                service_name,
                 service_category,
             }),
         };
