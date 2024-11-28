@@ -76,8 +76,6 @@ resources:
             AttributeType: S
           - AttributeName: service_category
             AttributeType: S
-          - AttributeName: precio
-            AttributeType: S
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
