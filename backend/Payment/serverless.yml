@@ -75,7 +75,8 @@ resources:
             AttributeType: S
           - AttributeName: user_id
             AttributeType: S
-          - AttributeName: payment_date  # Atributo para el LSI
+          - AttributeName: payment_date  
+            AttributeType: S  
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
