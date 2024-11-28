@@ -66,7 +66,7 @@ functions:
     handler: getAllByCategory.handler
     events:
       - http:
-          path: /services/getByCategory/{tenant_id}/{service_category}
+          path: /services/getByCategory/{tenant_id}
           method: get
           cors: true
           integration: lambda
