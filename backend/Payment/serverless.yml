@@ -68,14 +68,16 @@ resources:
         TableName: ${self:provider.environment.TABLE_PAYMENTS}
         AttributeDefinitions:
           - AttributeName: tenant_id
-            AttributeType: S
+            AttributeType: S  # Definir el tipo como String (S)
           - AttributeName: payment_id
-            AttributeType: S
+            AttributeType: S  # Definir el tipo como String (S)
+          - AttributeName: user_id
+            AttributeType: S  # Definir el tipo como String (S) para el índice
         KeySchema:
           - AttributeName: tenant_id
-            KeyType: HASH
+            KeyType: HASH   # Clave principal de tipo HASH (tenant_id)
           - AttributeName: payment_id
-            KeyType: RANGE
+            KeyType: RANGE  # Clave secundaria de tipo RANGE (payment_id)
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
@@ -83,8 +85,8 @@ resources:
           - IndexName: user_id-tenant_id-index
             KeySchema:
               - AttributeName: user_id
-                KeyType: HASH
+                KeyType: HASH   # Clave primaria del índice secundaria (user_id)
               - AttributeName: tenant_id
-                KeyType: RANGE
+                KeyType: RANGE  # Clave secundaria del índice (tenant_id)
             Projection:
               ProjectionType: ALL
