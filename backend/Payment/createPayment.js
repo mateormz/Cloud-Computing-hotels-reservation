@@ -134,7 +134,7 @@ module.exports.createPayment = async (event) => {
 
             console.log("Servicio obtenido correctamente:", serviceData.body);
 
-            const service_price = parseFloat(serviceData.body.price);
+            const service_price = parseFloat(serviceData.body.precio);
             if (isNaN(service_price)) {
                 return {
                     statusCode: 400,
