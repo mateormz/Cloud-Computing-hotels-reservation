@@ -1,4 +1,5 @@
 const AWS = require("aws-sdk");
+const { v4: uuidv4 } = require("uuid"); // Usamos UUID para generar un ID único
 
 exports.handler = async (event) => {
     try {
@@ -9,7 +10,7 @@ exports.handler = async (event) => {
             console.log("Error: Token no proporcionado.");
             return {
                 statusCode: 400,
-                body: { error: "Token no proporcionado" },
+                body: JSON.stringify({ error: "Token no proporcionado" }),
             };
         }
 
@@ -20,17 +21,19 @@ exports.handler = async (event) => {
             console.error("Error al parsear event.body:", event.body);
             return {
                 statusCode: 400,
-                body: { error: "El cuerpo de la solicitud no es un JSON válido." },
+                body: JSON.stringify({ error: "El cuerpo de la solicitud no es un JSON válido." }),
             };
         }
 
-        const { tenant_id, servicio_nombre, descripcion, precio } = body;
+        const { tenant_id, service_category, servicio_nombre, descripcion, precio } = body;
 
-        if (!tenant_id || !servicio_nombre || !descripcion || !precio) {
+        if (!tenant_id || !service_category || !servicio_nombre || !descripcion || !precio) {
             console.log("Error: Faltan campos requeridos.");
             return {
                 statusCode: 400,
-                body: { error: "Faltan campos requeridos: tenant_id, servicio_nombre, descripcion o precio" },
+                body: JSON.stringify({
+                    error: "Faltan campos requeridos: tenant_id, service_category, servicio_nombre, descripcion o precio",
+                }),
             };
         }
 
@@ -50,22 +53,22 @@ exports.handler = async (event) => {
         if (tokenResponsePayload.statusCode === 403) {
             return {
                 statusCode: 403,
-                body: { error: "Acceso no autorizado - Token inválido o expirado" },
+                body: JSON.stringify({ error: "Acceso no autorizado - Token inválido o expirado" }),
             };
         }
 
-        // Validar existencia del servicio usando una query directa a DynamoDB
+        // Validar existencia del servicio por nombre dentro del tenant usando el LSI
         const dynamodb = new AWS.DynamoDB.DocumentClient();
-        const tableName = process.env.TABLE_NAME_SERVICIOS;
-        const indexName = process.env.INDEXGSI1_SERVICES; // GSI: servicio_nombre como Partition Key y tenant_id como Sort Key
+        const tableName = process.env.TABLE_SERVICES;
+        const indexName = process.env.INDEXLSI1_SERVICES;
 
         const queryParams = {
             TableName: tableName,
             IndexName: indexName,
-            KeyConditionExpression: "servicio_nombre = :servicio_nombre AND tenant_id = :tenant_id",
+            KeyConditionExpression: "tenant_id = :tenant_id AND servicio_nombre = :servicio_nombre",
             ExpressionAttributeValues: {
-                ":servicio_nombre": servicio_nombre,
                 ":tenant_id": tenant_id,
+                ":servicio_nombre": servicio_nombre,
             },
         };
 
@@ -75,17 +78,22 @@ exports.handler = async (event) => {
         if (queryResult.Items && queryResult.Items.length > 0) {
             return {
                 statusCode: 409, // Conflict
-                body: {
+                body: JSON.stringify({
                     error: `El servicio '${servicio_nombre}' ya existe para el tenant '${tenant_id}'`,
-                },
+                }),
             };
         }
+
+        // Generar un service_id único
+        const service_id = uuidv4();
 
         // Registrar el servicio en DynamoDB
         const putParams = {
             TableName: tableName,
             Item: {
                 tenant_id,
+                service_id, // Agregamos el ID único del servicio
+                service_category,
                 servicio_nombre,
                 descripcion,
                 precio: precio.toString(), // Convertir a string para DynamoDB
@@ -97,16 +105,18 @@ exports.handler = async (event) => {
 
         return {
             statusCode: 200,
-            body: {
+            body: JSON.stringify({
                 message: "Servicio creado con éxito",
+                service_id,
                 servicio_nombre,
-            },
+                service_category,
+            }),
         };
     } catch (error) {
         console.error("Error inesperado:", error);
         return {
             statusCode: 500,
-            body: { error: "Error interno del servidor", details: error.message },
+            body: JSON.stringify({ error: "Error interno del servidor", details: error.message }),
         };
     }
 };

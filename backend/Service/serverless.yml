@@ -1,4 +1,4 @@
-org: d4vidmanu
+org: mateormz
 service: service-api
 
 provider:
@@ -9,15 +9,14 @@ provider:
   memorySize: 1024
   timeout: 30
   environment:
-    TABLE_NAME_SERVICIOS: ${sls:stage}-hotel-services
-    INDEXLSI1_SERVICES: tenant-precio-index
-    INDEXGSI1_SERVICES: servicio-tenant-index
-    TABLE_TOKENS: ${sls:stage}-hotel-tokens
+    TABLE_SERVICES: ${sls:stage}-hotel-services
+    INDEXLSI1_SERVICES: tenant-service_name-index
+    INDEXGSI1_SERVICES: category-index
     SERVICE_NAME: service-api
     STAGE: ${sls:stage}
 
 functions:
-  createService:
+  service_create:
     handler: createService.handler
     events:
       - http:
@@ -26,30 +25,39 @@ functions:
           cors: true
           integration: lambda
 
-  readService:
-    handler: readService.handler
-    events:
-      - http:
-          path: /service/read
-          method: get
-          cors: true
-          integration: lambda
-
-  updateService:
+  service_update:
     handler: updateService.handler
     events:
       - http:
-          path: /service/update
+          path: /service/{tenant_id}/{service_id}
           method: put
           cors: true
           integration: lambda
 
-  deleteService:
+  service_delete:
     handler: deleteService.handler
     events:
       - http:
-          path: /service/delete
+          path: /service/{tenant_id}/{service_id}
           method: delete
+          cors: true
+          integration: lambda
+
+  service_getByTenant:
+    handler: getAllServicesByTenant.handler
+    events:
+      - http:
+          path: /services/{tenant_id}
+          method: get
+          cors: true
+          integration: lambda
+
+  service_getAllByCategory:
+    handler: getAllServicesByCategory.handler
+    events:
+      - http:
+          path: /services/category/{category}
+          method: get
           cors: true
           integration: lambda
 
@@ -58,34 +66,38 @@ resources:
     ServicesTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.TABLE_NAME_SERVICIOS}
+        TableName: ${self:provider.environment.TABLE_SERVICES}
         AttributeDefinitions:
           - AttributeName: tenant_id
             AttributeType: S
-          - AttributeName: servicio_nombre
+          - AttributeName: service_id
+            AttributeType: S
+          - AttributeName: service_name
+            AttributeType: S
+          - AttributeName: service_category
             AttributeType: S
           - AttributeName: precio
             AttributeType: S
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
-          - AttributeName: servicio_nombre
+          - AttributeName: service_id
             KeyType: RANGE
         LocalSecondaryIndexes:
           - IndexName: ${self:provider.environment.INDEXLSI1_SERVICES}
             KeySchema:
               - AttributeName: tenant_id
                 KeyType: HASH
-              - AttributeName: precio
+              - AttributeName: service_name
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
         GlobalSecondaryIndexes:
           - IndexName: ${self:provider.environment.INDEXGSI1_SERVICES}
             KeySchema:
-              - AttributeName: servicio_nombre
+              - AttributeName: service_category
                 KeyType: HASH
-              - AttributeName: tenant_id
+              - AttributeName: service_id
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
