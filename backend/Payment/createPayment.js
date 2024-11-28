@@ -7,7 +7,7 @@ module.exports.createPayment = async (event) => {
         console.log("Evento recibido:", event);
 
         // Obtener el token del encabezado
-        const token = event.headers && event.headers['Authorization']; // Usamos corchetes para asegurar el acceso
+        const token = event.headers && event.headers['Authorization']; // Aseguramos que el token esté en los encabezados
         if (!token) {
             return {
                 statusCode: 400,
@@ -60,7 +60,10 @@ module.exports.createPayment = async (event) => {
 
         // 1. Obtener la reserva con getReservationById
         const getReservationFunction = `${process.env.SERVICE_NAME_RESERVATION}-${process.env.STAGE}-reservation_getById`;
-        const reservationPayload = { path: { tenant_id, reservation_id } };
+        const reservationPayload = {
+            path: { tenant_id, reservation_id },
+            headers: { Authorization: token } // Incluir el token en los encabezados
+        };
 
         const reservationResponse = await lambda.invoke({
             FunctionName: getReservationFunction,
@@ -80,7 +83,10 @@ module.exports.createPayment = async (event) => {
         // 2. Obtener los detalles de la habitación con getRoomById
         const room_id = reservation.body.room_id;  // De la respuesta de la reserva
         const getRoomFunction = `${process.env.SERVICE_NAME_ROOM}-${process.env.STAGE}-room_getById`;
-        const roomPayload = { path: { tenant_id, room_id } };
+        const roomPayload = {
+            path: { tenant_id, room_id },
+            headers: { Authorization: token } // Incluir el token en los encabezados
+        };
 
         const roomResponse = await lambda.invoke({
             FunctionName: getRoomFunction,
@@ -105,7 +111,11 @@ module.exports.createPayment = async (event) => {
         if (service_ids && Array.isArray(service_ids)) {
             for (const service_id of service_ids) {
                 const getServiceFunction = `${process.env.SERVICE_NAME_SERVICE}-${process.env.STAGE}-service_getById`;
-                const servicePayload = { path: { tenant_id, service_id } };
+                const servicePayload = {
+                    path: { tenant_id, service_id },
+                    headers: { Authorization: token } // Incluir el token en los encabezados
+                };
+
                 const serviceResponse = await lambda.invoke({
                     FunctionName: getServiceFunction,
                     InvocationType: 'RequestResponse',
