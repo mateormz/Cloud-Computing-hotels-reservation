@@ -4,10 +4,11 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 module.exports.getPaymentsByUserAndTenantId = async (event) => {
     try {
-        const token = event.headers.Authorization;
-        const tenant_id = event.pathParameters?.tenant_id;
-        const user_id = event.pathParameters?.user_id;
+        const token = event.headers.Authorization; // Token enviado en los headers
+        const tenant_id = event.pathParameters?.tenant_id;  // tenant_id pasado en la URL
+        const user_id = event.pathParameters?.user_id;  // user_id pasado en la URL
 
+        // Verificar que todos los parámetros estén presentes
         if (!token || !tenant_id || !user_id) {
             return {
                 statusCode: 400,
@@ -37,8 +38,8 @@ module.exports.getPaymentsByUserAndTenantId = async (event) => {
         // Consultar todos los pagos por user_id y tenant_id
         const params = {
             TableName: process.env.TABLE_PAYMENTS,
-            KeyConditionExpression: 'tenant_id = :tenant_id',
-            FilterExpression: 'user_id = :user_id',
+            IndexName: 'user_id-tenant_id-index', // Asegúrate de tener un índice secundario global (GSI) configurado
+            KeyConditionExpression: 'tenant_id = :tenant_id and user_id = :user_id',
             ExpressionAttributeValues: {
                 ':tenant_id': tenant_id,
                 ':user_id': user_id

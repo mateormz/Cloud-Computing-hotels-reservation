@@ -10,12 +10,12 @@ provider:
   timeout: 30
   environment:
     TABLE_PAYMENTS: ${sls:stage}-hotel-payments
-    SERVICE_NAME: reservation-api  # Nombre del servicio que contiene la validación de token
+    SERVICE_NAME_USER: reservation-api  # Nombre del servicio que contiene la validación de token
     STAGE: ${sls:stage}
 
 functions:
   payment_create:
-    handler: src/payment.createPayment
+    handler: src/createPayment.createPayment
     events:
       - http:
           path: /payment/create
@@ -24,7 +24,7 @@ functions:
           integration: lambda
 
   payment_delete:
-    handler: src/payment.deletePayment
+    handler: src/deletePayment.deletePayment
     events:
       - http:
           path: /payment/{tenant_id}/{payment_id}
@@ -33,7 +33,7 @@ functions:
           integration: lambda
 
   payment_getAll:
-    handler: src/payment.getAllPayments
+    handler: src/getAllPayments.getAllPayments
     events:
       - http:
           path: /payments/{tenant_id}
@@ -42,7 +42,7 @@ functions:
           integration: lambda
 
   payment_getById:
-    handler: src/payment.getPaymentById
+    handler: src/getPaymentById.getPaymentById
     events:
       - http:
           path: /payment/{tenant_id}/{payment_id}
@@ -50,8 +50,8 @@ functions:
           cors: true
           integration: lambda
 
-  payment_getByUserAndTenantId:
-    handler: src/payment.getPaymentByUserAndTenantId
+  payment_getPaymentsByUserAndTenantId:
+    handler: src/getPaymentsByUserAndTenantId.getPaymentsByUserAndTenantId
     events:
       - http:
           path: /payments/{tenant_id}/{user_id}
@@ -59,7 +59,7 @@ functions:
           cors: true
           integration: lambda
 
-Resources:
+resources:
   Resources:
     PaymentsTable:
       Type: AWS::DynamoDB::Table
@@ -80,6 +80,17 @@ Resources:
           - AttributeName: payment_id
             KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
+        GlobalSecondaryIndexes:
+          - IndexName: user_id-tenant_id-index
+            KeySchema:
+              - AttributeName: user_id
+                KeyType: HASH
+              - AttributeName: tenant_id
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
-
