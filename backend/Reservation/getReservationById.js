@@ -74,17 +74,14 @@ exports.getReservationById = async (event) => {
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
-            KeyConditionExpression: "tenant_id = :tenant_id AND reservation_id = :reservation_id",
-            ExpressionAttributeValues: {
-                ":tenant_id": tenant_id,
-                ":reservation_id": reservation_id,
-            },
+            Key: {
+                tenant_id: tenant_id,
+                reservation_id: reservation_id
+            }
         };
-        
 
         const reservationResponse = await dynamoDb.get(params).promise();
 
-        // Si no encontramos la reserva con la clave primaria, usamos el GSI
         if (!reservationResponse.Item) {
             console.warn(`Reserva no encontrada para tenant_id: ${tenant_id}, reservation_id: ${reservation_id}`);
             console.log("Buscando la reserva usando GSI...");
@@ -143,5 +140,4 @@ exports.getReservationById = async (event) => {
             }, // Respuesta como objeto JSON
         };
     }
-
 };
