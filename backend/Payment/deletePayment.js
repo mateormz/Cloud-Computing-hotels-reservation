@@ -4,10 +4,12 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 module.exports.deletePayment = async (event) => {
     try {
-        const token = event.headers.Authorization;
+        // Obtener parámetros del evento
+        const token = event.headers?.Authorization;
         const tenant_id = event.pathParameters?.tenant_id;
         const payment_id = event.pathParameters?.payment_id;
 
+        // Verificar que todos los parámetros necesarios estén presentes
         if (!token || !tenant_id || !payment_id) {
             return {
                 statusCode: 400,
@@ -15,10 +17,9 @@ module.exports.deletePayment = async (event) => {
             };
         }
 
-        // Validar el token del usuario llamando a la Lambda correspondiente
+        // Validar el token
         const validateTokenFunction = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
         const tokenPayload = { body: { token, tenant_id } };
-
         const tokenResponse = await lambda.invoke({
             FunctionName: validateTokenFunction,
             InvocationType: 'RequestResponse',
@@ -35,7 +36,7 @@ module.exports.deletePayment = async (event) => {
 
         console.log("Token validado correctamente.");
 
-        // Eliminar el pago de DynamoDB
+        // Eliminar el pago en DynamoDB
         const params = {
             TableName: process.env.TABLE_PAYMENTS,
             Key: { tenant_id, payment_id }

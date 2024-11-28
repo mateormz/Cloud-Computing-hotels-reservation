@@ -4,7 +4,7 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 module.exports.getPaymentsByUserAndTenantId = async (event) => {
     try {
-        const token = event.headers.Authorization; // Token enviado en los headers
+        const token = event.headers?.Authorization; // Token enviado en los headers
         const tenant_id = event.pathParameters?.tenant_id;  // tenant_id pasado en la URL
         const user_id = event.pathParameters?.user_id;  // user_id pasado en la URL
 
@@ -16,10 +16,9 @@ module.exports.getPaymentsByUserAndTenantId = async (event) => {
             };
         }
 
-        // Validar el token del usuario llamando a la Lambda correspondiente
+        // Validar el token
         const validateTokenFunction = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
         const tokenPayload = { body: { token, tenant_id } };
-
         const tokenResponse = await lambda.invoke({
             FunctionName: validateTokenFunction,
             InvocationType: 'RequestResponse',
@@ -36,7 +35,7 @@ module.exports.getPaymentsByUserAndTenantId = async (event) => {
 
         console.log("Token validado correctamente.");
 
-        // Consultar todos los pagos por user_id y tenant_id
+        // Consultar los pagos por user_id y tenant_id
         const params = {
             TableName: process.env.TABLE_PAYMENTS,
             IndexName: 'user_id-tenant_id-index', // Asegúrate de tener un índice secundario global (GSI) configurado

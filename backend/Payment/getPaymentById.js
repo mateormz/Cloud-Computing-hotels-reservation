@@ -4,10 +4,11 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 module.exports.getPaymentById = async (event) => {
     try {
-        const token = event.headers.Authorization;
+        const token = event.headers?.Authorization;
         const tenant_id = event.pathParameters?.tenant_id;
         const payment_id = event.pathParameters?.payment_id;
 
+        // Verificar que todos los parámetros necesarios estén presentes
         if (!token || !tenant_id || !payment_id) {
             return {
                 statusCode: 400,
@@ -15,10 +16,9 @@ module.exports.getPaymentById = async (event) => {
             };
         }
 
-        // Validar el token del usuario llamando a la Lambda correspondiente
+        // Validar el token
         const validateTokenFunction = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
         const tokenPayload = { body: { token, tenant_id } };
-
         const tokenResponse = await lambda.invoke({
             FunctionName: validateTokenFunction,
             InvocationType: 'RequestResponse',
