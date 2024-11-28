@@ -4,8 +4,10 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 module.exports.createPayment = async (event) => {
     try {
+        console.log("Evento recibido:", event);
+
         // Obtener el token del encabezado
-        const token = event.headers && event.headers['Authorization'];  // Accedemos a la cabecera Authorization con corchetes
+        const token = event.headers && event.headers['Authorization']; // Usamos corchetes para asegurar el acceso
         if (!token) {
             return {
                 statusCode: 400,
@@ -15,9 +17,11 @@ module.exports.createPayment = async (event) => {
 
         // Parsear el cuerpo del evento
         const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+        console.log("Cuerpo del evento parseado:", body);
+
         const { tenant_id, user_id, reservation_id } = body;
 
-        // Validar los campos requeridos
+        // Validar campos requeridos
         if (!tenant_id || !user_id || !reservation_id) {
             return {
                 statusCode: 400,
@@ -27,7 +31,11 @@ module.exports.createPayment = async (event) => {
 
         // Validar el token llamando a la Lambda correspondiente
         const validateTokenFunction = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
-        const tokenPayload = { body: { token, tenant_id } };
+        console.log("Llamando a la función de validación de token:", validateTokenFunction);
+
+        const tokenPayload = {
+            body: { token, tenant_id }  // Se pasa el token y el tenant_id como en createReservation
+        };
 
         const tokenResponse = await lambda.invoke({
             FunctionName: validateTokenFunction,
@@ -44,9 +52,11 @@ module.exports.createPayment = async (event) => {
 
             return {
                 statusCode: tokenResponseBody.statusCode,
-                body: JSON.stringify(parsedBody)
+                body: JSON.stringify(parsedBody) // Enviar respuesta del error si la validación falla
             };
         }
+
+        console.log("Token validado correctamente.");
 
         // 1. Obtener la reserva con getReservationById
         const getReservationFunction = `${process.env.SERVICE_NAME_RESERVATION}-${process.env.STAGE}-reservation_getById`;
