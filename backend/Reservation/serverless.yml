@@ -78,12 +78,12 @@ resources:
           - AttributeName: user_id
             AttributeType: S
           - AttributeName: service_ids
-            AttributeType: SS 
+            AttributeType: SS  # Set of Strings (for multiple service IDs)
         KeySchema:
           - AttributeName: tenant_id
-            KeyType: HASH
+            KeyType: HASH  # Partition key
           - AttributeName: reservation_id
-            KeyType: RANGE
+            KeyType: RANGE  # Sort key
         LocalSecondaryIndexes:
           - IndexName: ${self:provider.environment.INDEXLSI1_RESERVATIONS}
             KeySchema:
