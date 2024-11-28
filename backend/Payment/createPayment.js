@@ -1,133 +1,149 @@
 const AWS = require('aws-sdk');
-const dynamodb = new AWS.DynamoDB.DocumentClient();
+const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const lambda = new AWS.Lambda();
-
-const TABLE_PAYMENTS = process.env.TABLE_PAYMENTS;
-const SERVICE_NAME = process.env.SERVICE_NAME;
-const STAGE = process.env.STAGE;
-
-async function validateToken(token, tenant_id) {
-  // Invoca la función Lambda para validar el token
-  const params = {
-    FunctionName: `${SERVICE_NAME}-${STAGE}-hotel_validateUserToken`,
-    Payload: JSON.stringify({
-      body: {
-        token: token,
-        tenant_id: tenant_id,
-      },
-    }),
-  };
-
-  try {
-    const result = await lambda.invoke(params).promise();
-    const payload = JSON.parse(result.Payload);
-
-    if (payload.statusCode !== 200) {
-      throw new Error('Token no válido');
-    }
-  } catch (error) {
-    throw new Error('Error de validación de token: ' + error.message);
-  }
-}
-
-async function getReservaById(tenant_id, reserva_id) {
-  // Simulamos la llamada para obtener la reserva por ID
-  const params = {
-    TableName: `${STAGE}-hotel-reservas`, // Suponemos que hay una tabla de reservas
-    Key: {
-      tenant_id: tenant_id,
-      reserva_id: reserva_id,
-    },
-  };
-
-  try {
-    const result = await dynamodb.get(params).promise();
-    if (!result.Item) {
-      throw new Error('Reserva no encontrada');
-    }
-    return result.Item;
-  } catch (error) {
-    throw new Error('Error al obtener la reserva: ' + error.message);
-  }
-}
-
-async function getRoomById(tenant_id, room_id) {
-  // Simulamos la llamada a getRoomById para obtener la información de la habitación
-  const params = {
-    FunctionName: `${SERVICE_NAME}-${STAGE}-room_getById`,
-    Payload: JSON.stringify({
-      pathParameters: {
-        tenant_id: tenant_id,
-        room_id: room_id,
-      },
-      headers: {
-        Authorization: 'dummy-token', // Aquí iría el token validado
-      },
-    }),
-  };
-
-  try {
-    const result = await lambda.invoke(params).promise();
-    const room = JSON.parse(result.Payload);
-    if (!room || room.error) {
-      throw new Error('Error al obtener la habitación: ' + room.error);
-    }
-    return room;
-  } catch (error) {
-    throw new Error('Error al obtener la habitación: ' + error.message);
-  }
-}
+const uuid = require('uuid');
+const moment = require('moment');
 
 exports.createPayment = async (event) => {
-  const { tenant_id, reserva_id, token } = JSON.parse(event.body);
+    try {
+        console.log("Evento recibido:", JSON.stringify(event));
 
-  try {
-    // 1. Validar el token
-    await validateToken(token, tenant_id);
+        // Extraer token y tenant_id
+        const token = event.headers?.Authorization;
+        if (!token) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'Token no proporcionado' }),
+            };
+        }
+        
+        const tenant_id = event.body?.tenant_id;
+        const reservation_id = event.body?.reservation_id;
+        const user_id = event.body?.user_id;
+        const service_ids = event.body?.service_ids || [];
 
-    // 2. Obtener la reserva por ID
-    const reserva = await getReservaById(tenant_id, reserva_id);
-    
-    // 3. Obtener la habitación asociada a la reserva
-    const room = await getRoomById(tenant_id, reserva.room_id);
+        // Validar datos
+        if (!tenant_id || !reservation_id || !user_id) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'tenant_id, reservation_id, y user_id son requeridos' }),
+            };
+        }
 
-    // 4. Calcular el monto del pago
-    const days = reserva.dias_reserva;  // Asumimos que la reserva tiene un atributo 'dias_reserva'
-    const costPerDay = room.price_per_night;  // El costo por noche de la habitación
-    const totalAmount = costPerDay * days;
+        // Validar token
+        const validateTokenResponse = await validateToken(token, tenant_id);
+        if (validateTokenResponse.statusCode !== 200) {
+            return validateTokenResponse;
+        }
 
-    // 5. Guardar el pago
-    const paymentId = AWS.util.uuid.v4();
-    const payment = {
-      tenant_id: tenant_id,
-      payment_id: paymentId,
-      reserva_id: reserva_id,
-      room_id: reserva.room_id,
-      amount: totalAmount,
-      payment_date: new Date().toISOString(),
-      status: 'pending',  // El estado puede ser "pending", "completed", etc.
-    };
+        // Obtener la reserva
+        const reservation = await getReservationById(reservation_id, tenant_id);
+        if (!reservation) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({ error: 'Reserva no encontrada' }),
+            };
+        }
 
-    const paymentParams = {
-      TableName: TABLE_PAYMENTS,
-      Item: payment,
-    };
+        // Obtener la habitación asociada a la reserva
+        const room = await getRoomById(reservation.room_id, tenant_id);
+        if (!room) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({ error: 'Habitación no encontrada' }),
+            };
+        }
 
-    await dynamodb.put(paymentParams).promise();
+        // Calcular el monto (suma de la habitación y los servicios)
+        let totalAmount = parseFloat(room.price_per_night);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: 'Pago creado con éxito',
-        payment_id: paymentId,
-        amount: totalAmount,
-      }),
-    };
-  } catch (error) {
-    console.error('Error al crear el pago:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
-    };
-  }
+        for (const service_id of service_ids) {
+            const service = await getServiceById(service_id, tenant_id);
+            if (service) {
+                totalAmount += parseFloat(service.price);
+            }
+        }
+
+        // Crear el pago
+        const payment_id = uuid.v4();
+        const payment = {
+            payment_id,
+            tenant_id,
+            reservation_id,
+            user_id,
+            amount: totalAmount.toFixed(2),
+            created_at: moment().toISOString(),
+        };
+
+        // Insertar el pago en DynamoDB
+        const params = {
+            TableName: process.env.TABLE_PAYMENTS,
+            Item: payment,
+        };
+        await dynamoDb.put(params).promise();
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ message: 'Pago creado con éxito', payment }),
+        };
+
+    } catch (error) {
+        console.error('Error en createPayment:', error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message }),
+        };
+    }
 };
+
+// Función para validar el token
+async function validateToken(token, tenant_id) {
+    const validateTokenFunctionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
+    const payload = {
+        body: {
+            token: token,
+            tenant_id: tenant_id,
+        },
+    };
+
+    const response = await lambda.invoke({
+        FunctionName: validateTokenFunctionName,
+        InvocationType: 'RequestResponse',
+        Payload: JSON.stringify(payload),
+    }).promise();
+
+    return JSON.parse(response.Payload);
+}
+
+// Función para obtener la reserva
+async function getReservationById(reservation_id, tenant_id) {
+    const params = {
+        TableName: process.env.TABLE_RESERVATIONS,
+        Key: { tenant_id, reservation_id },
+    };
+
+    const result = await dynamoDb.get(params).promise();
+    return result.Item;
+}
+
+// Función para obtener la habitación
+async function getRoomById(room_id, tenant_id) {
+    const params = {
+        TableName: process.env.TABLE_ROOMS,
+        Key: { tenant_id, room_id },
+    };
+
+    const result = await dynamoDb.get(params).promise();
+    return result.Item;
+}
+
+// Función para obtener el servicio
+async function getServiceById(service_id, tenant_id) {
+    const params = {
+        TableName: process.env.TABLE_SERVICES,
+        Key: { tenant_id, service_id },
+    };
+
+    const result = await dynamoDb.get(params).promise();
+    return result.Item;
+}

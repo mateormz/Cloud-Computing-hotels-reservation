@@ -1,38 +1,51 @@
 const AWS = require('aws-sdk');
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-const tableName = process.env.TABLE_PAYMENTS;
+const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 exports.getPaymentById = async (event) => {
-  const { tenant_id, payment_id, token } = event.pathParameters;
+    try {
+        const payment_id = event.pathParameters.payment_id;
+        const tenant_id = event.pathParameters.tenant_id;
 
-  try {
-    // 1. Validar el token
-    await validateToken(token, tenant_id);
+        // Validación de token
+        const token = event.headers?.Authorization;
+        if (!token) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'Token no proporcionado' }),
+            };
+        }
 
-    // 2. Obtener el pago por ID
-    const params = {
-      TableName: tableName,
-      Key: {
-        tenant_id: tenant_id,
-        payment_id: payment_id,
-      },
-    };
+        // Validar token
+        const validateTokenResponse = await validateToken(token, tenant_id);
+        if (validateTokenResponse.statusCode !== 200) {
+            return validateTokenResponse;
+        }
 
-    const result = await dynamodb.get(params).promise();
+        // Obtener el pago
+        const params = {
+            TableName: process.env.TABLE_PAYMENTS,
+            Key: { tenant_id, payment_id },
+        };
 
-    if (!result.Item) {
-      throw new Error('Pago no encontrado');
+        const result = await dynamoDb.get(params).promise();
+
+        if (!result.Item) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({ error: 'Pago no encontrado' }),
+            };
+        }
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ payment: result.Item }),
+        };
+
+    } catch (error) {
+        console.error('Error en getPaymentById:', error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message }),
+        };
     }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify(result.Item),
-    };
-  } catch (error) {
-    console.error('Error al obtener el pago:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
-    };
-  }
 };

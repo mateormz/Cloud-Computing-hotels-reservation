@@ -5,18 +5,20 @@ provider:
   name: aws
   runtime: nodejs14.x
   iam:
-    role: arn:aws:iam::187978737113:role/LabRole
-  memorySize: 1024
-  timeout: 30
+    role: arn:aws:iam::637423363021:role/LabRole
   environment:
-    TABLE_PAYMENTS: ${sls:stage}-hotel-payments
-    TABLE_RESERVATIONS: ${sls:stage}-hotel-reservations # Asegúrate de tener la tabla de reservas configurada
-    SERVICE_NAME: room-api
-    STAGE: ${sls:stage}
+    TABLE_PAYMENTS: ${self:stage}-hotel-payments
+    TABLE_ROOMS: ${self:stage}-hotel-rooms
+    TABLE_SERVICES: ${self:stage}-hotel-services
+    TABLE_RESERVATIONS: ${self:stage}-hotel-reservations
+    SERVICE_NAME_USER: user-api
+    STAGE: ${self:stage}
+    INDEXGSI1_PAYMENTS: ${self:provider.environment.TABLE_PAYMENTS}-user-id-index  # GSI para usuario
+    INDEXLSI1_PAYMENTS: ${self:provider.environment.TABLE_PAYMENTS}-payment-date-index  # LSI para fecha de pago
 
 functions:
-  payment_create:
-    handler: handler.createPayment
+  createPayment:
+    handler: createPayment.createPayment
     events:
       - http:
           path: /payment/create
@@ -24,39 +26,39 @@ functions:
           cors: true
           integration: lambda
 
-  payment_getAll:
-    handler: handler.getAllPayments
-    events:
-      - http:
-          path: /payments/all
-          method: get
-          cors: true
-          integration: lambda
-
-  payment_getByUserAndTenant:
-    handler: handler.getPaymentsByUserAndTenant
-    events:
-      - http:
-          path: /payments/{tenant_id}/user/{user_id}
-          method: get
-          cors: true
-          integration: lambda
-
-  payment_getById:
-    handler: handler.getPaymentById
-    events:
-      - http:
-          path: /payment/{tenant_id}/{payment_id}
-          method: get
-          cors: true
-          integration: lambda
-
-  payment_delete:
-    handler: handler.deletePayment
+  deletePayment:
+    handler: deletePayment.deletePayment
     events:
       - http:
           path: /payment/{tenant_id}/{payment_id}
           method: delete
+          cors: true
+          integration: lambda
+
+  getAllPayments:
+    handler: getAllPayments.getAllPayments
+    events:
+      - http:
+          path: /payments/{tenant_id}
+          method: get
+          cors: true
+          integration: lambda
+
+  getPaymentById:
+    handler: getPaymentById.getPaymentById
+    events:
+      - http:
+          path: /payment/{tenant_id}/{payment_id}
+          method: get
+          cors: true
+          integration: lambda
+
+  getPaymentByUserAndTenantId:
+    handler: getPaymentByUserAndTenantId.getPaymentByUserAndTenantId
+    events:
+      - http:
+          path: /payment/{tenant_id}/{user_id}
+          method: get
           cors: true
           integration: lambda
 
@@ -73,76 +75,32 @@ resources:
             AttributeType: S
           - AttributeName: user_id
             AttributeType: S
-          - AttributeName: reserva_id
-            AttributeType: S
-          - AttributeName: status
-            AttributeType: S
+          - AttributeName: payment_date
+            AttributeType: S  # Usado para el LSI
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH
           - AttributeName: payment_id
             KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 5
-          WriteCapacityUnits: 5
         GlobalSecondaryIndexes:
-          - IndexName: user-id-tenant-id-index
+          - IndexName: ${self:provider.environment.INDEXGSI1_PAYMENTS}
             KeySchema:
+              - AttributeName: tenant_id
+                KeyType: HASH
               - AttributeName: user_id
-                KeyType: HASH
-              - AttributeName: tenant_id
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 5
-              WriteCapacityUnits: 5
-          - IndexName: reserva-id-status-index
+        LocalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.INDEXLSI1_PAYMENTS}
             KeySchema:
-              - AttributeName: reserva_id
+              - AttributeName: tenant_id
                 KeyType: HASH
-              - AttributeName: status
+              - AttributeName: payment_date
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 5
-              WriteCapacityUnits: 5
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
-          PointInTimeRecoveryEnabled: true
+          PointInTimeRecoveryEnabled: true  # Habilitamos recuperación en el tiempo
 
-    ReservationsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:provider.environment.TABLE_RESERVATIONS}
-        AttributeDefinitions:
-          - AttributeName: reserva_id
-            AttributeType: S
-          - AttributeName: room_id
-            AttributeType: S
-          - AttributeName: tenant_id
-            AttributeType: S
-        KeySchema:
-          - AttributeName: reserva_id
-            KeyType: HASH
-          - AttributeName: tenant_id
-            KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 5
-          WriteCapacityUnits: 5
-        GlobalSecondaryIndexes:
-          - IndexName: room-id-index
-            KeySchema:
-              - AttributeName: room_id
-                KeyType: HASH
-              - AttributeName: tenant_id
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 5
-              WriteCapacityUnits: 5
-        BillingMode: PAY_PER_REQUEST
-        PointInTimeRecoverySpecification:
-          PointInTimeRecoveryEnabled: true

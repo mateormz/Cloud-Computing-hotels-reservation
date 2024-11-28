@@ -1,37 +1,46 @@
 const AWS = require('aws-sdk');
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-const tableName = process.env.TABLE_PAYMENTS;
+const dynamoDb = new AWS.DynamoDB.DocumentClient();
 
 exports.getAllPayments = async (event) => {
-  const { tenant_id, token } = JSON.parse(event.body);
+    try {
+        const tenant_id = event.pathParameters.tenant_id;
 
-  try {
-    // 1. Validar el token
-    await validateToken(token, tenant_id);
+        // Validación de token
+        const token = event.headers?.Authorization;
+        if (!token) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'Token no proporcionado' }),
+            };
+        }
 
-    // 2. Obtener todos los pagos
-    const params = {
-      TableName: tableName,
-      IndexName: "tenant-id-index", // Suponiendo que tenemos un índice global por tenant_id
-      KeyConditionExpression: "tenant_id = :tenant_id",
-      ExpressionAttributeValues: {
-        ":tenant_id": tenant_id,
-      },
-    };
+        // Validar token
+        const validateTokenResponse = await validateToken(token, tenant_id);
+        if (validateTokenResponse.statusCode !== 200) {
+            return validateTokenResponse;
+        }
 
-    const result = await dynamodb.query(params).promise();
+        // Consultar todos los pagos (Scan)
+        const params = {
+            TableName: process.env.TABLE_PAYMENTS,
+            FilterExpression: "tenant_id = :tenant_id",
+            ExpressionAttributeValues: {
+                ":tenant_id": tenant_id,
+            },
+        };
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        payments: result.Items,
-      }),
-    };
-  } catch (error) {
-    console.error('Error al obtener los pagos:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
-    };
-  }
+        const result = await dynamoDb.scan(params).promise();
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify({ payments: result.Items }),
+        };
+
+    } catch (error) {
+        console.error('Error en getAllPayments:', error);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message }),
+        };
+    }
 };
