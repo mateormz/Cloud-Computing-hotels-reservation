@@ -99,12 +99,11 @@ module.exports.createPayment = async (event) => {
 
         console.log("Habitación obtenida correctamente:", roomData.body);
 
-        // Verificar y convertir el precio por noche de la habitación
         const price_per_night = parseFloat(roomData.body.price_per_night);
         if (isNaN(price_per_night)) {
             return {
                 statusCode: 400,
-                body: { error: 'Precio por noche de la habitación no válido' }
+                body: { error: 'Precio de la habitación no válido' }
             };
         }
 
@@ -139,11 +138,12 @@ module.exports.createPayment = async (event) => {
             if (isNaN(service_price)) {
                 return {
                     statusCode: 400,
-                    body: { error: 'Precio del servicio no válido' }
+                    body: { error: `Precio del servicio ${service_id} no válido` }
                 };
             }
 
-            totalAmount += service_price; // Sumar el precio del servicio al total
+            // Sumar el precio del servicio al total
+            totalAmount += service_price;
         }
 
         console.log("Monto total calculado:", totalAmount);
@@ -159,7 +159,7 @@ module.exports.createPayment = async (event) => {
                 payment_id,
                 user_id,
                 reservation_id,
-                monto_pago: totalAmount.toFixed(2), // Guardar el monto con dos decimales como string
+                monto_pago: totalAmount.toFixed(2), // Guardar el monto con dos decimales
                 created_at: new Date().toISOString(),
                 status: 'completed'
             }
@@ -174,7 +174,7 @@ module.exports.createPayment = async (event) => {
             body: {
                 message: 'Pago creado con éxito',
                 payment: paymentParams.Item
-            } // No usamos JSON.stringify aquí
+            }
         };
     } catch (error) {
         console.error('Error al crear el pago:', error);
@@ -183,7 +183,7 @@ module.exports.createPayment = async (event) => {
             body: {
                 error: 'Error interno del servidor',
                 details: error.message
-            } // No usamos JSON.stringify aquí
+            }
         };
     }
 };
