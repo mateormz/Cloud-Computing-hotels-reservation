@@ -30,7 +30,7 @@ functions:
     handler: getServiceById.handler
     events:
       - http:
-          path: /service/{tenant_id}/{service_id}
+          path: /service/getById/{tenant_id}/{service_id}
           method: get
           cors: true
           integration: lambda
@@ -39,7 +39,7 @@ functions:
     handler: updateService.handler
     events:
       - http:
-          path: /service/{tenant_id}/{service_id}
+          path: /service/put/{tenant_id}/{service_id}
           method: put
           cors: true
           integration: lambda
@@ -48,7 +48,7 @@ functions:
     handler: deleteService.handler
     events:
       - http:
-          path: /service/{tenant_id}/{service_id}
+          path: /service/delete/{tenant_id}/{service_id}
           method: delete
           cors: true
           integration: lambda
@@ -57,7 +57,7 @@ functions:
     handler: getAllServicesByTenant.handler
     events:
       - http:
-          path: /services/{tenant_id}
+          path: /services/getByTenant/{tenant_id}
           method: get
           cors: true
           integration: lambda
@@ -66,7 +66,7 @@ functions:
     handler: getAllByCategory.handler
     events:
       - http:
-          path: /services/{tenant_id}/{service_category}
+          path: /services/getByCategory/{tenant_id}/{service_category}
           method: get
           cors: true
           integration: lambda

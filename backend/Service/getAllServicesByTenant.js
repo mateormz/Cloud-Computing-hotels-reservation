@@ -15,7 +15,7 @@ exports.handler = async (event) => {
         }
 
         // Obtener tenant_id desde pathParameters
-        const { tenant_id } = event.pathParameters;
+        const { tenant_id } = event.path;
 
         if (!tenant_id) {
             console.log("Error: Faltan parámetros requeridos: tenant_id");

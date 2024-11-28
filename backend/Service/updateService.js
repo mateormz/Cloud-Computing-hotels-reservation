@@ -15,7 +15,7 @@ exports.handler = async (event) => {
         }
 
         // Obtener tenant_id y service_id desde pathParameters
-        const { tenant_id, service_id } = event.pathParameters;
+        const { tenant_id, service_id } = event.path;
 
         // Verificar que los parámetros sean proporcionados
         if (!tenant_id || !service_id) {

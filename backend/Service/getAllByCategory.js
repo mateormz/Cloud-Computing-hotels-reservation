@@ -14,9 +14,11 @@ exports.handler = async (event) => {
             };
         }
 
-        // Obtener tenant_id y service_category desde pathParameters
-        const { tenant_id, service_category } = event.pathParameters; // Acceder correctamente a pathParameters
+        // Obtener tenant_id desde pathParameters
+        const { tenant_id } = event.path;  // tenant_id desde pathParameters
+        const { service_category } = event.query; // service_category desde query parameters
 
+        // Verificar que ambos parámetros sean proporcionados
         if (!tenant_id || !service_category) {
             console.log("Error: Faltan parámetros requeridos: tenant_id o service_category");
             return {
@@ -45,7 +47,7 @@ exports.handler = async (event) => {
             };
         }
 
-        // Realizar la consulta para obtener todos los servicios del tenant_id y la service_category
+        // Realizar la consulta para obtener todos los servicios del tenant_id y service_category
         const dynamodb = new AWS.DynamoDB.DocumentClient();
         const tableName = process.env.TABLE_SERVICES;
 
