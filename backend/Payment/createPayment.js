@@ -12,7 +12,7 @@ module.exports.createPayment = async (event) => {
         if (!token) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Token no proporcionado' })
+                body: { error: 'Token no proporcionado' }
             };
         }
 
@@ -26,7 +26,7 @@ module.exports.createPayment = async (event) => {
         if (!tenant_id || !user_id || !reservation_id) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Campos requeridos faltantes' })
+                body: { error: 'Campos requeridos faltantes' }
             };
         }
 
@@ -67,7 +67,7 @@ module.exports.createPayment = async (event) => {
         if (reservationData.statusCode !== 200) {
             return {
                 statusCode: reservationData.statusCode,
-                body: JSON.stringify({ error: 'No se pudo obtener la reserva' })
+                body: { error: 'No se pudo obtener la reserva' }
             };
         }
 
@@ -93,13 +93,20 @@ module.exports.createPayment = async (event) => {
         if (roomData.statusCode !== 200) {
             return {
                 statusCode: roomData.statusCode,
-                body: JSON.stringify({ error: 'No se pudo obtener la información de la habitación' })
+                body: { error: 'No se pudo obtener la información de la habitación' }
             };
         }
 
         console.log("Habitación obtenida correctamente:", roomData.body);
 
-        const price_per_night = parseFloat(roomData.body.price_per_night); // Convertir el precio de la habitación a número
+        // Verificar y convertir el precio por noche de la habitación
+        const price_per_night = parseFloat(roomData.body.price_per_night);
+        if (isNaN(price_per_night)) {
+            return {
+                statusCode: 400,
+                body: { error: 'Precio por noche de la habitación no válido' }
+            };
+        }
 
         // Calcular el monto sumando el precio por noche de la habitación
         let totalAmount = price_per_night;
@@ -122,13 +129,20 @@ module.exports.createPayment = async (event) => {
             if (serviceData.statusCode !== 200) {
                 return {
                     statusCode: serviceData.statusCode,
-                    body: JSON.stringify({ error: `No se pudo obtener el servicio con id: ${service_id}` })
+                    body: { error: `No se pudo obtener el servicio con id: ${service_id}` }
                 };
             }
 
             console.log("Servicio obtenido correctamente:", serviceData.body);
 
-            const service_price = parseFloat(serviceData.body.price); // Convertir el precio del servicio a número
+            const service_price = parseFloat(serviceData.body.price);
+            if (isNaN(service_price)) {
+                return {
+                    statusCode: 400,
+                    body: { error: 'Precio del servicio no válido' }
+                };
+            }
+
             totalAmount += service_price; // Sumar el precio del servicio al total
         }
 
@@ -145,7 +159,7 @@ module.exports.createPayment = async (event) => {
                 payment_id,
                 user_id,
                 reservation_id,
-                monto_pago: totalAmount.toFixed(2), // Guardar el monto con dos decimales
+                monto_pago: totalAmount.toFixed(2), // Guardar el monto con dos decimales como string
                 created_at: new Date().toISOString(),
                 status: 'completed'
             }
@@ -157,19 +171,19 @@ module.exports.createPayment = async (event) => {
 
         return {
             statusCode: 200,
-            body: JSON.stringify({
+            body: {
                 message: 'Pago creado con éxito',
                 payment: paymentParams.Item
-            })
+            } // No usamos JSON.stringify aquí
         };
     } catch (error) {
         console.error('Error al crear el pago:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({
+            body: {
                 error: 'Error interno del servidor',
                 details: error.message
-            })
+            } // No usamos JSON.stringify aquí
         };
     }
 };

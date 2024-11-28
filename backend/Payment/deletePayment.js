@@ -11,13 +11,14 @@ module.exports.deletePayment = async (event) => {
         if (!token || !tenant_id || !payment_id) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Token, tenant_id o payment_id no proporcionado' })
+                body: { error: 'Token, tenant_id o payment_id no proporcionado' }
             };
         }
 
         // Validar el token del usuario llamando a la Lambda correspondiente
         const validateTokenFunction = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
         const tokenPayload = { body: { token, tenant_id } };
+
         const tokenResponse = await lambda.invoke({
             FunctionName: validateTokenFunction,
             InvocationType: 'RequestResponse',
@@ -45,14 +46,14 @@ module.exports.deletePayment = async (event) => {
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: 'Pago eliminado con éxito' })
+            body: { message: 'Pago eliminado con éxito' }
         };
 
     } catch (error) {
         console.error('Error en deletePayment:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message })
+            body: { error: 'Error interno del servidor', details: error.message }
         };
     }
 };

@@ -12,13 +12,14 @@ module.exports.getPaymentsByUserAndTenantId = async (event) => {
         if (!token || !tenant_id || !user_id) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: 'Token, tenant_id o user_id no proporcionado' })
+                body: { error: 'Token, tenant_id o user_id no proporcionado' }
             };
         }
 
         // Validar el token del usuario llamando a la Lambda correspondiente
         const validateTokenFunction = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
         const tokenPayload = { body: { token, tenant_id } };
+
         const tokenResponse = await lambda.invoke({
             FunctionName: validateTokenFunction,
             InvocationType: 'RequestResponse',
@@ -51,20 +52,20 @@ module.exports.getPaymentsByUserAndTenantId = async (event) => {
         if (result.Items.length === 0) {
             return {
                 statusCode: 404,
-                body: JSON.stringify({ error: 'No se encontraron pagos para este usuario' })
+                body: { error: 'No se encontraron pagos para este usuario' }
             };
         }
 
         return {
             statusCode: 200,
-            body: JSON.stringify(result.Items)
+            body: result.Items
         };
 
     } catch (error) {
         console.error('Error en getPaymentsByUserAndTenantId:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Error interno del servidor', details: error.message })
+            body: { error: 'Error interno del servidor', details: error.message }
         };
     }
 };
