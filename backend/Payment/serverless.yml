@@ -30,7 +30,7 @@ functions:
     handler: deletePayment.deletePayment
     events:
       - http:
-          path: /payment/{tenant_id}/{payment_id}
+          path: /payment/delete/{tenant_id}/{payment_id}
           method: delete
           cors: true
           integration: lambda
@@ -57,7 +57,7 @@ functions:
     handler: getPaymentByUserAndTenantId.getPaymentByUserAndTenantId
     events:
       - http:
-          path: /payment/{tenant_id}/{user_id}
+          path: /payment/{tenant_id}/user/{user_id}  
           method: get
           cors: true
           integration: lambda
