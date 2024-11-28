@@ -2,7 +2,7 @@ const AWS = require("aws-sdk");
 
 exports.handler = async (event) => {
     try {
-        console.log("Evento recibido:", JSON.stringify(event));
+        console.log("Evento recibido:", event);
 
         // Verificar token en la cabecera Authorization
         const token = event.headers?.Authorization;
@@ -10,18 +10,18 @@ exports.handler = async (event) => {
             console.log("Error: Token no proporcionado.");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: "Token no proporcionado" }),
+                body: { error: "Token no proporcionado" },
             };
         }
 
         // Obtener tenant_id y service_category desde pathParameters
-        const { tenant_id, service_category } = event.path;
+        const { tenant_id, service_category } = event.pathParameters; // Acceder correctamente a pathParameters
 
         if (!tenant_id || !service_category) {
             console.log("Error: Faltan parámetros requeridos: tenant_id o service_category");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: "Faltan parámetros: tenant_id o service_category" }),
+                body: { error: "Faltan parámetros: tenant_id o service_category" },
             };
         }
 
@@ -33,7 +33,7 @@ exports.handler = async (event) => {
             .invoke({
                 FunctionName: validateTokenLambdaName,
                 InvocationType: "RequestResponse",
-                Payload: JSON.stringify({ body: { token, tenant_id } }),
+                Payload: JSON.stringify({ body: { token, tenant_id } }), // Convertimos el objeto a JSON solo para la invocación
             })
             .promise();
 
@@ -41,7 +41,7 @@ exports.handler = async (event) => {
         if (tokenResponsePayload.statusCode === 403) {
             return {
                 statusCode: 403,
-                body: JSON.stringify({ error: "Acceso no autorizado - Token inválido o expirado" }),
+                body: { error: "Acceso no autorizado - Token inválido o expirado" },
             };
         }
 
@@ -51,8 +51,9 @@ exports.handler = async (event) => {
 
         const queryParams = {
             TableName: tableName,
-            IndexName: process.env.INDEXLSI1_SERVICES, // Asegúrate de tener un índice secundario por tenant_id y service_category
-            KeyConditionExpression: "tenant_id = :tenant_id AND service_category = :service_category",
+            IndexName: process.env.INDEXGSI1_SERVICES, // Asegúrate de que este es el índice correcto (GSI)
+            KeyConditionExpression: "service_category = :service_category", // Usamos solo service_category
+            FilterExpression: "tenant_id = :tenant_id", // Filtramos por tenant_id
             ExpressionAttributeValues: {
                 ":tenant_id": tenant_id,
                 ":service_category": service_category,
@@ -64,22 +65,22 @@ exports.handler = async (event) => {
         if (!result.Items || result.Items.length === 0) {
             return {
                 statusCode: 404,
-                body: JSON.stringify({ error: `No se encontraron servicios en la categoría '${service_category}' para el tenant '${tenant_id}'` }),
+                body: { error: `No se encontraron servicios en la categoría '${service_category}' para el tenant '${tenant_id}'` },
             };
         }
 
         return {
             statusCode: 200,
-            body: JSON.stringify({
+            body: {
                 message: `Servicios encontrados para la categoría '${service_category}' del tenant '${tenant_id}'`,
                 services: result.Items,
-            }),
+            },
         };
     } catch (error) {
         console.error("Error en service_getAllByCategory:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "Error interno del servidor", details: error.message }),
+            body: { error: "Error interno del servidor", details: error.message },
         };
     }
 };
