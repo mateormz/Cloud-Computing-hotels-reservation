@@ -4,13 +4,14 @@ service: payment-api
 provider:
   name: aws
   runtime: nodejs20.x
+  region: us-east-1
   iam:
     role: arn:aws:iam::187978737113:role/LabRole
   memorySize: 1024
   timeout: 30
   environment:
     TABLE_PAYMENTS: ${sls:stage}-hotel-payments
-    SERVICE_NAME_USER: reservation-api  # Nombre del servicio que contiene la validación de token
+    SERVICE_NAME: reservation-api  # Nombre del servicio que contiene la validación de token
     STAGE: ${sls:stage}
 
 functions:
@@ -50,7 +51,7 @@ functions:
           cors: true
           integration: lambda
 
-  payment_getPaymentsByUserAndTenantId:
+  payment_getByUserAndTenantId:
     handler: src/getPaymentsByUserAndTenantId.getPaymentsByUserAndTenantId
     events:
       - http:
@@ -71,18 +72,18 @@ resources:
           - AttributeName: payment_id
             AttributeType: S
           - AttributeName: user_id
-            AttributeType: S  # Se agrega para el GSI
+            AttributeType: S
           - AttributeName: reservation_id
             AttributeType: S
         KeySchema:
           - AttributeName: tenant_id
-            KeyType: HASH  # Clave de partición
+            KeyType: HASH
           - AttributeName: payment_id
-            KeyType: RANGE # Clave de ordenación
+            KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
-        GlobalSecondaryIndexes:  # Índice global para consultas con user_id
+        GlobalSecondaryIndexes:
           - IndexName: user_id-index
             KeySchema:
               - AttributeName: user_id
@@ -94,3 +95,5 @@ resources:
             ProvisionedThroughput:
               ReadCapacityUnits: 5
               WriteCapacityUnits: 5
+
+    # Si tienes otros recursos, añádelos aquí.
