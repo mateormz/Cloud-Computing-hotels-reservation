@@ -1,46 +1,61 @@
 const AWS = require('aws-sdk');
 const lambda = new AWS.Lambda();
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
-const { Decimal } = require('aws-sdk/clients/dynamodb');
 
 module.exports.createPayment = async (event) => {
     try {
-        const token = event.headers.Authorization;
-        const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+        // Obtener el token del encabezado
+        const token = event.headers && event.headers['Authorization'];  // Accedemos a la cabecera Authorization con corchetes
+        if (!token) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'Token no proporcionado' })
+            };
+        }
 
+        // Parsear el cuerpo del evento
+        const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
         const { tenant_id, user_id, reservation_id } = body;
 
-        if (!token || !tenant_id || !user_id || !reservation_id) {
+        // Validar los campos requeridos
+        if (!tenant_id || !user_id || !reservation_id) {
             return {
                 statusCode: 400,
                 body: JSON.stringify({ error: 'Token, tenant_id, user_id o reservation_id no proporcionado' })
             };
         }
 
-        // Validar el token
+        // Validar el token llamando a la Lambda correspondiente
         const validateTokenFunction = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
         const tokenPayload = { body: { token, tenant_id } };
+
         const tokenResponse = await lambda.invoke({
             FunctionName: validateTokenFunction,
             InvocationType: 'RequestResponse',
-            Payload: JSON.stringify(tokenPayload)
+            Payload: JSON.stringify(tokenPayload),
         }).promise();
 
         const tokenResponseBody = JSON.parse(tokenResponse.Payload);
+
         if (tokenResponseBody.statusCode !== 200) {
+            const parsedBody = typeof tokenResponseBody.body === 'string'
+                ? JSON.parse(tokenResponseBody.body)
+                : tokenResponseBody.body;
+
             return {
                 statusCode: tokenResponseBody.statusCode,
-                body: tokenResponseBody.body
+                body: JSON.stringify(parsedBody)
             };
         }
 
         // 1. Obtener la reserva con getReservationById
         const getReservationFunction = `${process.env.SERVICE_NAME_RESERVATION}-${process.env.STAGE}-reservation_getById`;
         const reservationPayload = { path: { tenant_id, reservation_id } };
+
         const reservationResponse = await lambda.invoke({
             FunctionName: getReservationFunction,
             InvocationType: 'RequestResponse',
-            Payload: JSON.stringify(reservationPayload)
+            Payload: JSON.stringify(reservationPayload),
         }).promise();
 
         const reservation = JSON.parse(reservationResponse.Payload);
@@ -53,13 +68,14 @@ module.exports.createPayment = async (event) => {
         }
 
         // 2. Obtener los detalles de la habitación con getRoomById
-        const room_id = reservation.body.room_id; // De la respuesta de la reserva
+        const room_id = reservation.body.room_id;  // De la respuesta de la reserva
         const getRoomFunction = `${process.env.SERVICE_NAME_ROOM}-${process.env.STAGE}-room_getById`;
         const roomPayload = { path: { tenant_id, room_id } };
+
         const roomResponse = await lambda.invoke({
             FunctionName: getRoomFunction,
             InvocationType: 'RequestResponse',
-            Payload: JSON.stringify(roomPayload)
+            Payload: JSON.stringify(roomPayload),
         }).promise();
 
         const room = JSON.parse(roomResponse.Payload);
@@ -83,7 +99,7 @@ module.exports.createPayment = async (event) => {
                 const serviceResponse = await lambda.invoke({
                     FunctionName: getServiceFunction,
                     InvocationType: 'RequestResponse',
-                    Payload: JSON.stringify(servicePayload)
+                    Payload: JSON.stringify(servicePayload),
                 }).promise();
 
                 const service = JSON.parse(serviceResponse.Payload);
