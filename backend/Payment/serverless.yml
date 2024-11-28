@@ -71,17 +71,19 @@ resources:
           - AttributeName: payment_id
             AttributeType: S
           - AttributeName: user_id
-            AttributeType: S
+            AttributeType: S  # Se agrega para el GSI
           - AttributeName: reservation_id
             AttributeType: S
         KeySchema:
           - AttributeName: tenant_id
-            KeyType: HASH
+            KeyType: HASH  # Clave de partición
           - AttributeName: payment_id
-            KeyType: RANGE
+            KeyType: RANGE # Clave de ordenación
         BillingMode: PAY_PER_REQUEST
-        GlobalSecondaryIndexes:
-          - IndexName: user_id-tenant_id-index
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
+        GlobalSecondaryIndexes:  # Índice global para consultas con user_id
+          - IndexName: user_id-index
             KeySchema:
               - AttributeName: user_id
                 KeyType: HASH
@@ -89,5 +91,6 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
-        PointInTimeRecoverySpecification:
-          PointInTimeRecoveryEnabled: true
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
