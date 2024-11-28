@@ -77,8 +77,6 @@ resources:
             AttributeType: S
           - AttributeName: user_id
             AttributeType: S
-          - AttributeName: service_ids
-            AttributeType: SS  # Set of Strings (for multiple service IDs)
         KeySchema:
           - AttributeName: tenant_id
             KeyType: HASH  # Partition key
