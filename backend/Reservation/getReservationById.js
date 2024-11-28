@@ -74,11 +74,13 @@ exports.getReservationById = async (event) => {
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
-            Key: {
-                tenant_id: tenant_id,
-                reservation_id: reservation_id,
+            KeyConditionExpression: "tenant_id = :tenant_id AND reservation_id = :reservation_id",
+            ExpressionAttributeValues: {
+                ":tenant_id": tenant_id,
+                ":reservation_id": reservation_id,
             },
         };
+        
 
         const reservationResponse = await dynamoDb.get(params).promise();
 

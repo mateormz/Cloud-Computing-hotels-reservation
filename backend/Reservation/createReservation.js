@@ -21,13 +21,13 @@ module.exports.createReservation = async (event) => {
         const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
         console.log("Cuerpo del evento parseado:", body);
 
-        const { tenant_id, user_id, room_id, service_id, start_date, end_date } = body;
+        const { tenant_id, user_id, room_id, service_ids, start_date, end_date } = body;
 
         // Validar campos requeridos
-        if (!tenant_id || !user_id || !room_id || !service_id || !start_date || !end_date) {
+        if (!tenant_id || !user_id || !room_id || !service_ids || !start_date || !end_date || !Array.isArray(service_ids)) {
             return {
                 statusCode: 400,
-                body: { error: 'Campos requeridos faltantes' }
+                body: { error: 'Campos requeridos faltantes o service_ids no es un arreglo' }
             };
         }
 
@@ -130,7 +130,7 @@ module.exports.createReservation = async (event) => {
                 reservation_id,
                 user_id,
                 room_id,
-                service_id,
+                service_ids,  // Ahora usamos un arreglo de service_ids
                 start_date,
                 end_date,
                 created_at: new Date().toISOString(),
