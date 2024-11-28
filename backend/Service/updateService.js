@@ -2,7 +2,7 @@ const AWS = require("aws-sdk");
 
 exports.handler = async (event) => {
     try {
-        console.log("Evento recibido:", JSON.stringify(event));
+        console.log("Evento recibido:", event);
 
         // Verificar token en la cabecera Authorization
         const token = event.headers?.Authorization;
@@ -10,7 +10,7 @@ exports.handler = async (event) => {
             console.log("Error: Token no proporcionado.");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: "Token no proporcionado" }),
+                body: { error: "Token no proporcionado" },
             };
         }
 
@@ -22,7 +22,7 @@ exports.handler = async (event) => {
             console.log("Error: Faltan parámetros requeridos: tenant_id o service_id");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: "Faltan parámetros requeridos: tenant_id o service_id" }),
+                body: { error: "Faltan parámetros requeridos: tenant_id o service_id" },
             };
         }
 
@@ -33,7 +33,7 @@ exports.handler = async (event) => {
             console.log("Error al parsear el cuerpo de la solicitud.");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: "Cuerpo de solicitud no válido" }),
+                body: { error: "Cuerpo de solicitud no válido" },
             };
         }
 
@@ -44,7 +44,7 @@ exports.handler = async (event) => {
         if (!descripcion && !precio) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: "Debe proporcionar al menos uno de los siguientes campos: descripcion o precio." }),
+                body: { error: "Debe proporcionar al menos uno de los siguientes campos: descripcion o precio." },
             };
         }
 
@@ -56,7 +56,7 @@ exports.handler = async (event) => {
             .invoke({
                 FunctionName: validateTokenLambdaName,
                 InvocationType: "RequestResponse",
-                Payload: JSON.stringify({ body: { token, tenant_id } }),
+                Payload: JSON.stringify({ body: { token, tenant_id } }), // Necesario para invocar el lambda de validación
             })
             .promise();
 
@@ -64,7 +64,7 @@ exports.handler = async (event) => {
         if (tokenResponsePayload.statusCode === 403) {
             return {
                 statusCode: 403,
-                body: JSON.stringify({ error: "Acceso no autorizado - Token inválido o expirado" }),
+                body: { error: "Acceso no autorizado - Token inválido o expirado" },
             };
         }
 
@@ -86,7 +86,7 @@ exports.handler = async (event) => {
         if (!service.Item) {
             return {
                 statusCode: 404,
-                body: JSON.stringify({ error: `Servicio con ID '${service_id}' no encontrado para el tenant '${tenant_id}'` }),
+                body: { error: `Servicio con ID '${service_id}' no encontrado para el tenant '${tenant_id}'` },
             };
         }
 
@@ -120,15 +120,15 @@ exports.handler = async (event) => {
 
         return {
             statusCode: 200,
-            body: JSON.stringify({
+            body: {
                 message: `Servicio con ID '${service_id}' actualizado con éxito`,
-            }),
+            },
         };
     } catch (error) {
         console.error("Error en updateService:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "Error interno del servidor", details: error.message }),
+            body: { error: "Error interno del servidor", details: error.message },
         };
     }
 };

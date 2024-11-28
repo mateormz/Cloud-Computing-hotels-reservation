@@ -2,7 +2,7 @@ const AWS = require("aws-sdk");
 
 exports.handler = async (event) => {
     try {
-        console.log("Evento recibido:", JSON.stringify(event));
+        console.log("Evento recibido:", event);
 
         // Verificar token en la cabecera Authorization
         const token = event.headers?.Authorization;
@@ -10,7 +10,7 @@ exports.handler = async (event) => {
             console.log("Error: Token no proporcionado.");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: "Token no proporcionado" }),
+                body: { error: "Token no proporcionado" },
             };
         }
 
@@ -21,7 +21,7 @@ exports.handler = async (event) => {
             console.log("Error: Faltan parámetros requeridos: tenant_id");
             return {
                 statusCode: 400,
-                body: JSON.stringify({ error: "Falta el parámetro: tenant_id" }),
+                body: { error: "Falta el parámetro: tenant_id" },
             };
         }
 
@@ -41,7 +41,7 @@ exports.handler = async (event) => {
         if (tokenResponsePayload.statusCode === 403) {
             return {
                 statusCode: 403,
-                body: JSON.stringify({ error: "Acceso no autorizado - Token inválido o expirado" }),
+                body: { error: "Acceso no autorizado - Token inválido o expirado" },
             };
         }
 
@@ -63,22 +63,22 @@ exports.handler = async (event) => {
         if (!result.Items || result.Items.length === 0) {
             return {
                 statusCode: 404,
-                body: JSON.stringify({ error: `No se encontraron servicios para el tenant '${tenant_id}'` }),
+                body: { error: `No se encontraron servicios para el tenant '${tenant_id}'` },
             };
         }
 
         return {
             statusCode: 200,
-            body: JSON.stringify({
+            body: {
                 message: `Servicios encontrados para el tenant '${tenant_id}'`,
                 services: result.Items,
-            }),
+            },
         };
     } catch (error) {
         console.error("Error en getAllServicesByTenant:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: "Error interno del servidor", details: error.message }),
+            body: { error: "Error interno del servidor", details: error.message },
         };
     }
 };
