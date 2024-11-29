@@ -9,7 +9,7 @@ def lambda_handler(event, context):
         if not token:
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'Token no proporcionado'})
+                'body': {'error': 'Token no proporcionado'}
             }
 
         # Validación del token usando otra Lambda
@@ -32,7 +32,7 @@ def lambda_handler(event, context):
         if response['statusCode'] != 200:
             return {
                 'statusCode': response['statusCode'],
-                'body': json.dumps(response['body'])
+                'body': response['body']
             }
 
         # Conexión a DynamoDB
@@ -49,7 +49,7 @@ def lambda_handler(event, context):
         if 'comment_text' not in updates:
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'No se proporcionó texto de comentario para actualizar'})
+                'body': {'error': 'No se proporcionó texto de comentario para actualizar'}
             }
 
         # Validar existencia del comentario antes de actualizar
@@ -62,7 +62,7 @@ def lambda_handler(event, context):
         if 'Item' not in get_response:
             return {
                 'statusCode': 404,
-                'body': json.dumps({'error': 'El comentario no existe'})
+                'body': {'error': 'El comentario no existe'}
             }
 
         # Actualizar el comentario
@@ -80,10 +80,16 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'body': json.dumps({'message': 'Comentario actualizado con éxito', 'updated': response['Attributes']})
+            'body': {
+                'message': 'Comentario actualizado con éxito',
+                'updated': response['Attributes']
+            }
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
+            'body': {
+                'error': 'Error interno del servidor',
+                'details': str(e)
+            }
         }
