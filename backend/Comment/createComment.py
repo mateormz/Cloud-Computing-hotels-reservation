@@ -73,7 +73,14 @@ def lambda_handler(event, context):
             'statusCode': 200,
             'body': {
                 'message': 'Comentario creado con éxito',
-                'comment_id': comment_id
+                'comment': {
+                    'tenant_id': tenant_id,
+                    'comment_id': comment_id,
+                    'room_id': room_id,
+                    'user_id': user_id,
+                    'comment_text': comment_text,
+                    'created_at': created_at
+                }
             }
         }
     except Exception as e:
