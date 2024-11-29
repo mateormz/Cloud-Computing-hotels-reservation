@@ -36,7 +36,7 @@ def lambda_handler(event, context):
                 'hotel_id': hotel_id,
                 'hotel_name': hotel_name,
                 'hotel_location': hotel_location,
-                'description': description,
+                'description': description, 
                 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
         )

@@ -39,7 +39,7 @@ def lambda_handler(event, context):
             print("Error: Faltan campos requeridos")
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'Faltan campos requeridos'})
+                'body': {'error': 'Faltan campos requeridos'}
             }
 
         # Validar que `price_per_night` sea un string
@@ -47,7 +47,7 @@ def lambda_handler(event, context):
             print("Error: price_per_night no es un string")
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'El campo price_per_night debe ser un string'})
+                'body': {'error': 'El campo price_per_night debe ser un string'}
             }
 
         # Validar que description no sea vacío
@@ -55,7 +55,7 @@ def lambda_handler(event, context):
             print("Error: description no es válida")
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'El campo description debe ser un string no vacío'})
+                'body': {'error': 'El campo description debe ser un string no vacío'}
             }
 
         # Generar un ID único para la habitación
@@ -81,12 +81,12 @@ def lambda_handler(event, context):
         # Respuesta de éxito
         return {
             'statusCode': 200,
-            'body': json.dumps({'message': 'Habitación creada con éxito', 'room_id': room_id})
+            'body': {'message': 'Habitación creada con éxito', 'room_id': room_id}
         }
 
     except Exception as e:
         print("Error inesperado:", str(e))  # Log del error para depuración
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
+            'body': {'error': 'Error interno del servidor', 'details': str(e)}
         }
