@@ -19,9 +19,14 @@ const LoginForm = () => {
 
         try {
             const response = await fetchLogin(tenant_id, email, password);
+            localStorage.setItem('tenant_id', tenant_id);
             localStorage.setItem('user_id', response.body.user_id);
             localStorage.setItem('token', response.body.token);
             console.log('Login exitoso:', response);
+
+            console.log(localStorage.getItem('tenant_id'));
+            console.log(localStorage.getItem('user_id'));
+            console.log(localStorage.getItem('token'));
             // navigate('/dashboard');
         } catch (error) {
             console.error('Error durante el login:', error);

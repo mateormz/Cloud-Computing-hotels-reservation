@@ -4,9 +4,7 @@ import { Container } from 'react-bootstrap';
 
 const Register = () => {
   return (
-    <Container className="mt-5">
-      <RegisterForm />
-    </Container>
+    <RegisterForm />
   );
 };
 

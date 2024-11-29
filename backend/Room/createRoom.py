@@ -24,6 +24,7 @@ def lambda_handler(event, context):
         max_persons = body.get('max_persons')
         room_type = body.get('room_type')
         price_per_night = body.get('price_per_night')
+        description = body.get('description')  # Nuevo atributo description
 
         print("Datos extraídos del body:")
         print(f"Tenant ID: {tenant_id}")
@@ -31,6 +32,7 @@ def lambda_handler(event, context):
         print(f"Max Persons: {max_persons}")
         print(f"Room Type: {room_type}")
         print(f"Price Per Night: {price_per_night}")
+        print(f"Description: {description}")  # Log de description
 
         # Validar datos requeridos
         if not all([tenant_id, room_name, max_persons, room_type, price_per_night]):
@@ -48,6 +50,14 @@ def lambda_handler(event, context):
                 'body': json.dumps({'error': 'El campo price_per_night debe ser un string'})
             }
 
+        # Validar que description no sea vacío
+        if not description or not isinstance(description, str):
+            print("Error: description no es válida")
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'error': 'El campo description debe ser un string no vacío'})
+            }
+
         # Generar un ID único para la habitación
         room_id = str(uuid.uuid4())
         print(f"Generado Room ID: {room_id}")
@@ -61,6 +71,7 @@ def lambda_handler(event, context):
                 'max_persons': max_persons,
                 'room_type': room_type,
                 'price_per_night': price_per_night,
+                'description': description,  # Agregar description al item
                 'availability': 'disponible',  # Inicializa con "disponible"
                 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
@@ -70,12 +81,12 @@ def lambda_handler(event, context):
         # Respuesta de éxito
         return {
             'statusCode': 200,
-            'body': {'message': 'Habitación creada con éxito', 'room_id': room_id}
+            'body': json.dumps({'message': 'Habitación creada con éxito', 'room_id': room_id})
         }
 
     except Exception as e:
         print("Error inesperado:", str(e))  # Log del error para depuración
         return {
             'statusCode': 500,
-            'body': {'error': 'Error interno del servidor', 'details': str(e)}
+            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
         }
