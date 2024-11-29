@@ -11,10 +11,10 @@ def lambda_handler(event, context):
         if not token:
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'Token no proporcionado'})
+                'body': {'error': 'Token no proporcionado'}
             }
 
-        # Validación del token usando otra Lambda (sin cambios)
+        # Validación del token usando otra Lambda
         function_name = f"{os.environ['SERVICE_NAME']}-{os.environ['STAGE']}-hotel_validateUserToken"
         payload_string = json.dumps({
             "body": {
@@ -57,12 +57,12 @@ def lambda_handler(event, context):
         comment_id = str(uuid.uuid4())
         created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        # Inserción del comentario con `created_at`
+        # Inserción del comentario
         table.put_item(
             Item={
                 'tenant_id': tenant_id,
-                'room_id': room_id,
                 'comment_id': comment_id,
+                'room_id': room_id,
                 'user_id': user_id,
                 'comment_text': comment_text,
                 'created_at': created_at
@@ -71,10 +71,16 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'body': {'message': 'Comentario creado con éxito', 'comment_id': comment_id}
+            'body': {
+                'message': 'Comentario creado con éxito',
+                'comment_id': comment_id
+            }
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': {'error': 'Error interno del servidor', 'details': str(e)}
+            'body': {
+                'error': 'Error interno del servidor',
+                'details': str(e)
+            }
         }
