@@ -4,7 +4,11 @@ const USER_API = 'https://o8i8j2n3vj.execute-api.us-east-1.amazonaws.com/dev/use
 
 const ROOM_API = 'https://y3z1dcl3bi.execute-api.us-east-1.amazonaws.com/dev';
 
-const COMMENT_API = 'https://9kdkljwjjk.execute-api.us-east-1.amazonaws.com/dev/comments';
+const COMMENT_API = 'https://euoupdyd66.execute-api.us-east-1.amazonaws.com/dev';
+
+const SERVICE_API = 'https://oxyokl9fcj.execute-api.us-east-1.amazonaws.com/dev';
+
+const HOTEL_API = 'https://uz3dmwro1a.execute-api.us-east-1.amazonaws.com/dev';
 
 // USER
 
@@ -27,55 +31,49 @@ export const fetchRegister = async (tenant_id, nombre, email, password) => {
 
 export const fetchRoomsByTenant = async (tenant_id) => {
     try {
-        // Recuperar el token del localStorage
         const token = localStorage.getItem('token');
         
         if (!token) {
             throw new Error('Token no disponible');
         }
 
-        // Configurar los encabezados de la solicitud con el token
         const config = {
             headers: {
-                Authorization: token  // El token se incluye directamente sin el prefijo "Bearer"
+                Authorization: token
             }
         };
 
-        // Realizar la solicitud GET con el tenant_id en la URL y los encabezados de autorización
         const response = await axios.get(`${ROOM_API}/rooms/${tenant_id}`, config);
 
-        console.log(response.data);  // Mostrar la respuesta en consola
+        console.log(response.data);
         return response.data;
     } catch (error) {
         console.error("Error al obtener las habitaciones:", error);
-        throw error;  // Lanza el error para que pueda ser manejado donde se llame esta función
+        throw error;
     }
 };
 
 export const fetchRoomById = async (tenant_id, room_id) => {
     try {
-        // Recuperar el token del localStorage
         const token = localStorage.getItem('token');
         
         if (!token) {
             throw new Error('Token no disponible');
         }
 
-        // Configurar los encabezados de la solicitud con el token
         const config = {
             headers: {
-                Authorization: token  // El token se incluye directamente sin el prefijo "Bearer"
+                Authorization: token
             }
         };
 
-        // Realizar la solicitud GET con tenant_id y room_id en la URL y los encabezados de autorización
         const response = await axios.get(`${ROOM_API}/room/${tenant_id}/${room_id}`, config);
 
-        console.log(response.data);  // Mostrar la respuesta en consola
-        return response.data;  // Retorna los detalles de la habitación
+        console.log(response.data);
+        return response.data;
     } catch (error) {
         console.error("Error al obtener los detalles de la habitación:", error);
-        throw error;  // Lanza el error para que pueda ser manejado donde se llame esta función
+        throw error;
     }
 };
 
@@ -83,27 +81,100 @@ export const fetchRoomById = async (tenant_id, room_id) => {
 
 export const fetchCommentsByRoom = async (tenant_id, room_id) => {
     try {
-        // Recuperar el token del localStorage
         const token = localStorage.getItem('token');
         
         if (!token) {
             throw new Error('Token no disponible');
         }
 
-        // Configurar los encabezados de la solicitud con el token
         const config = {
             headers: {
-                Authorization: token  // El token se incluye directamente sin el prefijo "Bearer"
+                Authorization: token
             }
         };
 
-        // Realizar la solicitud GET con tenant_id y room_id en la URL y los encabezados de autorización
-        const response = await axios.get(`${COMMENT_API}/${tenant_id}/${room_id}`, config);
+        const response = await axios.get(`${COMMENT_API}/comments/${tenant_id}/${room_id}`, config);
 
-        console.log(response.data);  // Mostrar la respuesta en consola
-        return response.data.body.comments;  // Retornamos los comentarios
+        console.log(response.data);
+        return response.data.body.comments;
     } catch (error) {
         console.error("Error al obtener los comentarios:", error);
-        throw error;  // Lanza el error para que pueda ser manejado donde se llame esta función
+        throw error;
+    }
+};
+
+export const fetchCreateComment = async (tenant_id, user_id, room_id, comment_text) => {
+    try {
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            throw new Error('Token no disponible');
+        }
+
+        const config = {
+            headers: {
+                Authorization: token,
+            }
+        };
+
+        const data = {
+            tenant_id,
+            user_id,
+            room_id,
+            comment_text
+        };
+
+        const response = await axios.post(`${COMMENT_API}/comment/create`, data, config);
+
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error al crear el comentario:", error);
+        throw error;
+    }
+};
+
+// SERVICES
+
+export const fetchServicesByTenant = async (tenant_id) => {
+    try {
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            throw new Error('Token no disponible');
+        }
+
+        const config = {
+            headers: {
+                Authorization: token
+            }
+        };
+
+        const response = await axios.get(`${SERVICE_API}/services/getByTenant/${tenant_id}`, config);
+
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error al obtener los servicios del tenant:", error);
+        throw error;
+    }
+};
+
+// HOTEL
+
+export const fetchHotelByTenant = async (tenant_id) => {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('Token no disponible');
+        }
+
+        const config = { headers: { Authorization: token } };
+        const response = await axios.get(`${HOTEL_API}/hotels/tenant/${tenant_id}`, config);
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error al obtener la información de los hoteles:", error);
+        throw error;
     }
 };

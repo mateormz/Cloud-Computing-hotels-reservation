@@ -27,7 +27,7 @@ const LoginForm = () => {
             console.log(localStorage.getItem('tenant_id'));
             console.log(localStorage.getItem('user_id'));
             console.log(localStorage.getItem('token'));
-            // navigate('/dashboard');
+            navigate('/dashboard');
         } catch (error) {
             console.error('Error durante el login:', error);
             setError('Credenciales incorrectas o error del servidor');
