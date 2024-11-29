@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchRoomsByTenant } from '../services/api';
 import { Alert, Spinner } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 
 const RoomsList = () => {
     const [rooms, setRooms] = useState([]);
@@ -23,7 +24,7 @@ const RoomsList = () => {
             const fetchRooms = async () => {
                 try {
                     const data = await fetchRoomsByTenant(tenant_id);
-                    setRooms(data.body.rooms); // Suponiendo que la respuesta es como la proporcionada
+                    setRooms(data.body.rooms);
                 } catch (error) {
                     setError('Error al cargar las habitaciones.');
                 } finally {
@@ -60,7 +61,11 @@ const RoomsList = () => {
                 <ul className="space-y-4">
                     {rooms.map((room, index) => (
                         <li key={index} className="p-4 bg-white shadow-md rounded-lg">
-                            <h3 className="text-lg font-semibold">{room.room_name}</h3>
+                            <h3 className="text-lg font-semibold">
+                                <Link to={`/room/${room.room_id}`} className="text-blue-500 hover:underline">
+                                    {room.room_name}
+                                </Link>
+                            </h3>
                             <p><strong>Tipo de habitación:</strong> {room.room_type}</p>
                             <p><strong>Capacidad máxima:</strong> {room.max_persons} personas</p>
                             <p><strong>Precio por noche:</strong> ${room.price_per_night}</p>
