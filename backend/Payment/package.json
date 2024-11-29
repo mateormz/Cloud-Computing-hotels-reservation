@@ -1,9 +1,8 @@
 {
-  "name": "service",
+  "name": "payment",
   "version": "1.0.0",
-  "main": "createService.js",
+  "main": "createPayment.js",
   "scripts": {
-
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
