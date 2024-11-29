@@ -1,11 +1,11 @@
-org: lopezluis17
+org: mateormz
 service: room-api
 
 provider:
   name: aws
   runtime: python3.9
   iam:
-    role: arn:aws:iam::418974378390:role/LabRole
+    role: arn:aws:iam::637423324074:role/LabRole
   memorySize: 1024
   timeout: 30
   environment:
