@@ -11,7 +11,7 @@ def lambda_handler(event, context):
         if not token:
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'Token no proporcionado'})
+                'body': {'error': 'Token no proporcionado'}
             }
 
         # Validación del token usando otra Lambda
@@ -34,7 +34,7 @@ def lambda_handler(event, context):
         if response['statusCode'] != 200:
             return {
                 'statusCode': response['statusCode'],
-                'body': json.dumps(response['body'])
+                'body': response['body']
             }
 
         # Datos del comentario
@@ -50,7 +50,7 @@ def lambda_handler(event, context):
         if not all([tenant_id, user_id, room_id, comment_text]):
             return {
                 'statusCode': 400,
-                'body': json.dumps({'error': 'Faltan campos requeridos'})
+                'body': {'error': 'Faltan campos requeridos'}
             }
 
         # Generar ID de comentario y timestamp
@@ -71,10 +71,16 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'body': json.dumps({'message': 'Comentario creado con éxito', 'comment_id': comment_id})
+            'body': {
+                'message': 'Comentario creado con éxito',
+                'comment_id': comment_id
+            }
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': json.dumps({'error': 'Error interno del servidor', 'details': str(e)})
+            'body': {
+                'error': 'Error interno del servidor',
+                'details': str(e)
+            }
         }
