@@ -32,7 +32,7 @@ def lambda_handler(event, context):
         if response['statusCode'] != 200:
             return {
                 'statusCode': response['statusCode'],
-                'body': response['body']
+                'body': json.dumps(response['body'])
             }
 
         # Conexión a DynamoDB
