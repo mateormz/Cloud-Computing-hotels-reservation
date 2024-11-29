@@ -1,48 +1,33 @@
 #!/bin/bash
 
-# Archivo donde se guardarán los resultados del despliegue
-RESULTS_FILE="deployment_summary_dev.txt"
+# Definir el directorio principal donde están las APIs
+base_dir=$(pwd)
 
-# Limpiar el archivo de resultados anterior (si existe)
-> $RESULTS_FILE
-
-# Crear un array asociativo para almacenar las URLs base de las APIs desplegadas
-declare -A BASE_URLS
-
-# Recorrer todas las carpetas (servicios) que contengan un archivo `serverless.yml`
+# Encontrar todos los subdirectorios que contienen un archivo 'serverless.yml'
+api_dirs=()
 for dir in */; do
-    if [ -f "$dir/serverless.yml" ]; then
-        echo "Desplegando en DEV para la carpeta: $dir"
-        
-        # Cambiar al directorio del servicio
-        cd "$dir" || exit
-        
-        # Ejecutar el despliegue con `serverless deploy`
-        DEPLOY_OUTPUT=$(sls deploy --stage dev 2>&1)
-        
-        # Extraer la URL base del output de `sls deploy` utilizando un patrón regex
-        BASE_URL=$(echo "$DEPLOY_OUTPUT" | grep -Eo 'https?://[a-zA-Z0-9\-]+\.execute-api\.[a-zA-Z0-9\-]+\.amazonaws\.com/dev')
-        
-        # Si se encuentra una URL, la almacena en el array asociativo
-        if [ -n "$BASE_URL" ]; then
-            BASE_URLS["$BASE_URL"]="$dir"
-        fi
-        
-        # Regresar al directorio principal
-        cd .. || exit
-    fi
+  if [ -f "$dir/serverless.yml" ]; then
+    api_dirs+=("$dir")
+  fi
 done
 
-# Mostrar un resumen del despliegue
-echo "Despliegue en DEV completado. Base URLs detectadas:"
+# Función para hacer deploy y ejecutar sls info
+deploy_api() {
+  api_dir=$1
+  echo "Desplegando API en el directorio: $api_dir"
+  
+  # Realizar el despliegue en el entorno 'dev'
+  cd "$base_dir/$api_dir"
+  sls deploy --stage dev
+  
+  # Ejecutar sls info para verificar el despliegue
+  sls info --stage dev
+  
+  # Volver al directorio original
+  cd "$base_dir"
+}
 
-# Recorrer el array asociativo e imprimir las URLs encontradas
-for url in "${!BASE_URLS[@]}"; do
-    echo "BaseURL de ${BASE_URLS[$url]}: $url"
-done
-
-# Guardar las URLs en el archivo de resultados
-echo "Base URLs detectadas:" > $RESULTS_FILE
-for url in "${!BASE_URLS[@]}"; do
-    echo "BaseURL de ${BASE_URLS[$url]}: $url" >> $RESULTS_FILE
+# Desplegar todas las APIs
+for api in "${api_dirs[@]}"; do
+  deploy_api "$api"
 done
