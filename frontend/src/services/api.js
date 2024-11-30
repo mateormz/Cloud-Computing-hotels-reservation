@@ -178,3 +178,15 @@ export const fetchHotelByTenant = async (tenant_id) => {
         throw error;
     }
 };
+
+export const fetchAllHotels = async () => {
+    try {
+        const response = await axios.get(`${HOTEL_API}/hotels`);
+
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error al obtener los hoteles:", error);
+        throw error;
+    }
+};

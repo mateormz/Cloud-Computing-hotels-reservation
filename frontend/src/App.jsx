@@ -4,6 +4,7 @@ import Register from './pages/Register'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Room from './pages/Room'
+import Start from './pages/Start'
 import NavBar from './components/NavBar'
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
           <Route path="/login" element={<Login/>}/>
           <Route path="/dashboard" element={<Dashboard/>}/>
           <Route path="/room/:roomId" element={<Room/>}/>
+          <Route path="/home" element={<Start/>}/>
         </Routes>
       </Router>
     </>
