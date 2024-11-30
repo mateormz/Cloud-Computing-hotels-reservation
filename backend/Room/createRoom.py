@@ -25,6 +25,10 @@ def lambda_handler(event, context):
         room_type = body.get('room_type')
         price_per_night = body.get('price_per_night')
         description = body.get('description')  # Nuevo atributo description
+        image = body.get('image')
+
+        if image is None:
+            image = "https://cdn.computerhoy.com/sites/navi.axelspringer.es/public/media/image/2022/07/habitacion-hotel-2764541.jpg?tf=3840x"    
 
         print("Datos extraídos del body:")
         print(f"Tenant ID: {tenant_id}")
@@ -33,6 +37,8 @@ def lambda_handler(event, context):
         print(f"Room Type: {room_type}")
         print(f"Price Per Night: {price_per_night}")
         print(f"Description: {description}")  # Log de description
+        print(f"Image: {image}")  # Log de description
+
 
         # Validar datos requeridos
         if not all([tenant_id, room_name, max_persons, room_type, price_per_night]):
@@ -72,6 +78,7 @@ def lambda_handler(event, context):
                 'room_type': room_type,
                 'price_per_night': price_per_night,
                 'description': description,  # Agregar description al item
+                'image': image, 
                 'availability': 'disponible',  # Inicializa con "disponible"
                 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }

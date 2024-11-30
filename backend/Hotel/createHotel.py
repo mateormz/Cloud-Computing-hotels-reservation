@@ -14,6 +14,7 @@ def lambda_handler(event, context):
         hotel_name = event['body'].get('hotel_name')
         hotel_location = event['body'].get('hotel_location')
         description = event['body'].get('description')
+        image = event['body'].get('image')
 
         # Verificar que todos los campos requeridos estén presentes
         if not all([tenant_id, hotel_name, hotel_location]):
@@ -26,6 +27,9 @@ def lambda_handler(event, context):
         if description is None:
             description = ""
 
+        if image is None:
+            image = "https://www.ahstatic.com/photos/a7l9_ho_00_p_1024x768.jpg"    
+
         # Generar un ID único para el hotel
         hotel_id = str(uuid.uuid4())
 
@@ -37,6 +41,7 @@ def lambda_handler(event, context):
                 'hotel_name': hotel_name,
                 'hotel_location': hotel_location,
                 'description': description, 
+                'image': image, 
                 'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             }
         )
