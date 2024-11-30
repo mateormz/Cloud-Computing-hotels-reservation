@@ -131,6 +131,18 @@ export const fetchHotelByTenant = async (tenant_id) => {
     }
 };
 
+export const fetchAllHotels = async () => {
+    try {
+        const response = await axios.get(`${HOTEL_API}/hotels`);
+
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error al obtener los hoteles:", error);
+        throw error;
+    }
+};
+
 export const fetchCreateReservation = async (tenant_id, user_id, room_id, service_ids, start_date, end_date) => {
     try {
         const token = localStorage.getItem('token');
@@ -164,7 +176,21 @@ export const fetchCreateReservation = async (tenant_id, user_id, room_id, servic
     }
 };
 
+export const fetchHotelsByLocation = async (hotel_location) => {
+    try {
+        const response = await axios.get(`${HOTEL_API}/hotels/location`, {
+            params: {
+                hotel_location
+            }
+        });
 
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error al obtener los hoteles por ubicación:", error);
+        throw error;
+    }
+};
 
 // PAYMENT
 

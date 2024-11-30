@@ -1,16 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Form, Button, Alert } from 'react-bootstrap';
-import { fetchLogin } from '../services/api';
+import { fetchLogin, fetchAllHotels } from '../services/api'; // Importamos la función para obtener todos los hoteles
 
 const LoginForm = () => {
-    const [tenant_id, setTenant_id] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [tenant_id, setTenant_id] = useState(''); // Estado para almacenar el tenant_id
+    const [email, setEmail] = useState(''); // Estado para el email
+    const [password, setPassword] = useState(''); // Estado para la contraseña
+    const [error, setError] = useState(''); // Estado para los errores
+    const [loading, setLoading] = useState(false); // Estado para cargar el estado
+    const [hotels, setHotels] = useState([]); // Estado para almacenar los hoteles disponibles
 
     const navigate = useNavigate();
+
+    useEffect(() => {
+        // Obtener los hoteles disponibles
+        const getHotels = async () => {
+            try {
+                const data = await fetchAllHotels(); // Llamamos a la función para obtener los hoteles
+                setHotels(data.body.hotels); // Asumiendo que la API devuelve los hoteles en "data.body.hotels"
+            } catch (error) {
+                setError('Error al cargar los hoteles.');
+            }
+        };
+
+        // Obtener los hoteles al montar el componente
+        getHotels();
+
+        // Verificar si el tenant_id ya está en el localStorage
+        const storedTenantId = localStorage.getItem('tenant_id');
+        if (storedTenantId) {
+            setTenant_id(storedTenantId); // Preseleccionamos el hotel
+        }
+    }, []);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -23,10 +45,6 @@ const LoginForm = () => {
             localStorage.setItem('user_id', response.body.user_id);
             localStorage.setItem('token', response.body.token);
             console.log('Login exitoso:', response);
-
-            console.log(localStorage.getItem('tenant_id'));
-            console.log(localStorage.getItem('user_id'));
-            console.log(localStorage.getItem('token'));
             navigate('/dashboard');
         } catch (error) {
             console.error('Error durante el login:', error);
@@ -42,15 +60,21 @@ const LoginForm = () => {
                 <h2 className="text-center text-2xl font-bold mb-6">Iniciar Sesión</h2>
                 <Form onSubmit={handleLogin}>
                     <Form.Group className="mb-4" controlId="tenant_id">
-                        <Form.Label className="block mb-2 font-medium">Tenant ID</Form.Label>
+                        <Form.Label className="block mb-2 font-medium">Selecciona un Hotel</Form.Label>
                         <Form.Control
-                            type="text"
-                            placeholder="Ingresa el Tenant ID"
+                            as="select"
                             value={tenant_id}
                             onChange={(e) => setTenant_id(e.target.value)}
                             className="border border-gray-300 rounded-lg p-2 w-full"
                             required
-                        />
+                        >
+                            <option value="">Selecciona un Hotel</option>
+                            {hotels.map((hotel) => (
+                                <option key={hotel.tenant_id} value={hotel.tenant_id}>
+                                    {hotel.hotel_name}
+                                </option>
+                            ))}
+                        </Form.Control>
                     </Form.Group>
 
                     <Form.Group className="mb-4" controlId="email">

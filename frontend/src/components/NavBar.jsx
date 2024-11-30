@@ -5,7 +5,7 @@ const NavBar = () => {
     const tenantId = localStorage.getItem('tenant_id');  // Comprobar si el usuario está autenticado
 
     return (
-        <nav className="bg-blue-500 p-4 shadow-md">
+        <nav className="bg-white p-4 shadow-md">
             <div className="container mx-auto flex justify-between items-center">
                 <Link to="/" className="text-white text-lg font-bold hover:text-gray-200">
                     Hotel App
