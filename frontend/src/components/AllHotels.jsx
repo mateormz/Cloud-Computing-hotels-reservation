@@ -1,35 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { fetchAllHotels } from '../services/api'; // Importamos la función para obtener todos los hoteles
-import { Alert, Spinner } from 'react-bootstrap'; // Usamos componentes de react-bootstrap para los estados de carga y error
-import { useNavigate } from 'react-router-dom'; // Usamos useNavigate para redirigir al login
+import { fetchAllHotels } from '../services/api';
+import { Alert, Spinner } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 
 const HotelsList = () => {
-    const [hotels, setHotels] = useState([]); // Estado para almacenar los hoteles
-    const [loading, setLoading] = useState(true); // Estado para controlar si está cargando
-    const [error, setError] = useState(null); // Estado para manejar errores
+    const [hotels, setHotels] = useState([]);
+    const [filteredHotels, setFilteredHotels] = useState([]); // Estado para hoteles filtrados
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [search, setSearch] = useState(""); // Estado para el texto de búsqueda
 
-    const navigate = useNavigate(); // Hook para la redirección
+    const navigate = useNavigate();
 
     useEffect(() => {
         const getHotels = async () => {
             try {
-                const data = await fetchAllHotels(); // Llamamos a la función para obtener los hoteles
-                setHotels(data.body.hotels); // Asumiendo que la API devuelve los hoteles en "data.body.hotels"
+                const data = await fetchAllHotels();
+                setHotels(data.body.hotels);
+                setFilteredHotels(data.body.hotels); // Inicialmente mostramos todos los hoteles
             } catch (error) {
-                setError('Error al cargar los hoteles.'); // Si hay un error, lo mostramos
+                setError('Error al cargar los hoteles.');
             } finally {
-                setLoading(false); // Termina la carga
+                setLoading(false);
             }
         };
 
-        getHotels(); // Llamamos la función para obtener los hoteles al montar el componente
-    }, []); // Solo se ejecuta una vez cuando el componente se monta
+        getHotels();
+    }, []);
 
     const handleHotelClick = (tenant_id) => {
-        // Guardamos el tenant_id del hotel seleccionado en el localStorage
         localStorage.setItem('tenant_id', tenant_id);
-        // Redirigimos al formulario de login
         navigate('/login');
+    };
+
+    const handleSearchChange = (e) => {
+        const query = e.target.value.toLowerCase();
+        setSearch(query);
+
+        // Filtrar los hoteles según la ubicación
+        const filtered = hotels.filter(hotel =>
+            hotel.hotel_location.toLowerCase().includes(query)
+        );
+        setFilteredHotels(filtered);
     };
 
     if (loading) {
@@ -50,15 +62,28 @@ const HotelsList = () => {
 
     return (
         <div className="container mx-auto p-6">
-            <h2 className="text-center text-2xl font-bold mb-6">Lista de Hoteles</h2>
-            {hotels.length === 0 ? (
+            {/* Barra de búsqueda estilizada con el emoji de ubicación */}
+            <div className="relative mb-8 flex items-center">
+                {/* Emoji de ubicación */}
+                <span className="absolute left-4 text-2xl text-gray-500">📍</span>
+                
+                <input
+                    type="text"
+                    value={search}
+                    onChange={handleSearchChange}
+                    placeholder="Buscar por ubicación..."
+                    className="w-full pl-12 p-4 text-xl rounded-lg border-2 border-gray-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+            </div>
+
+            {/* Mostrar lista de hoteles si hay disponibles */}
+            {filteredHotels.length === 0 ? (
                 <Alert variant="info" className="text-center">No hay hoteles disponibles.</Alert>
             ) : (
                 <ul className="space-y-4">
-                    {hotels.map((hotel, index) => (
+                    {filteredHotels.map((hotel, index) => (
                         <li key={index} className="p-4 bg-white shadow-md rounded-lg cursor-pointer" onClick={() => handleHotelClick(hotel.tenant_id)}>
                             <div className="flex items-center space-x-4">
-                                {/* Mostrar la imagen del hotel si está disponible */}
                                 {hotel.image && (
                                     <img
                                         src={hotel.image}

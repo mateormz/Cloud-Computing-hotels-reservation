@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import Room from './pages/Room'
 import Start from './pages/Start'
 import NavBar from './components/NavBar'
+import Footer from './components/Footer'
 
 function App() {
 
@@ -20,6 +21,7 @@ function App() {
           <Route path="/room/:roomId" element={<Room/>}/>
           <Route path="/home" element={<Start/>}/>
         </Routes>
+        <Footer></Footer>
       </Router>
     </>
   )

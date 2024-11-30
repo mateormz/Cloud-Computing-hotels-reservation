@@ -190,3 +190,19 @@ export const fetchAllHotels = async () => {
         throw error;
     }
 };
+
+export const fetchHotelsByLocation = async (hotel_location) => {
+    try {
+        const response = await axios.get(`${HOTEL_API}/hotels/location`, {
+            params: {
+                hotel_location
+            }
+        });
+
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error al obtener los hoteles por ubicación:", error);
+        throw error;
+    }
+};
