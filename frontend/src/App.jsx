@@ -5,7 +5,6 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Room from './pages/Room'
 import NavBar from './components/NavBar'
-
 function App() {
 
   return (

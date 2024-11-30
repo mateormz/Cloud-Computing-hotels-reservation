@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom'; // Hook para obtener el parámetro de la URL
+import { useParams, useNavigate } from 'react-router-dom'; // Agregamos useNavigate para redirigir
 import { fetchRoomById } from '../services/api'; // Necesitarás esta función para obtener los datos de la habitación
-import { Spinner, Alert } from 'react-bootstrap';
+import { Spinner, Alert, Button } from 'react-bootstrap';
 
 const RoomDetail = () => {
     const { roomId } = useParams(); // Obtenemos el ID de la habitación desde la URL
+    const navigate = useNavigate(); // Usamos useNavigate para redirigir
     const [room, setRoom] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -76,6 +77,16 @@ const RoomDetail = () => {
             <p><strong>Precio por noche:</strong> ${room.price_per_night}</p>
             <p><strong>Disponibilidad:</strong> {room.availability}</p>
             <p><strong>Descripción:</strong> {room.description}</p>
+
+            {/* Botón para redirigir a la página de selección de servicios */}
+            <div className="text-center mt-4">
+                <Button 
+                    variant="primary" 
+                    onClick={() => navigate(`/services/${roomId}`)} // Redirige a la página de servicios
+                >
+                    Crear Reserva
+                </Button>
+            </div>
         </div>
     );
 };
