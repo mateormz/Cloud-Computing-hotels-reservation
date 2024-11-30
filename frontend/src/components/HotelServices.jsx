@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchServicesByTenant, fetchCreateReservation } from '../services/api'; // Importamos las funciones de API
+import { fetchServicesByTenant, fetchCreateReservation, fetchCreatePayment } from '../services/api'; // Asegúrate de importar fetchCreatePayment
 import { Spinner, Alert, Button, Form } from 'react-bootstrap'; // Usamos Spinner y Alert de react-bootstrap para la UI
 import { useParams, useNavigate } from 'react-router-dom'; // Importamos useNavigate
 
@@ -99,7 +99,7 @@ const HotelServices = () => {
             console.log("Datos enviados a la API:", reservationData);
     
             // Llamar a la función para crear la reserva
-            const response = await fetchCreateReservation(
+            const reservationResponse = await fetchCreateReservation(
                 reservationData.tenant_id,
                 reservationData.user_id,
                 reservationData.room_id,
@@ -108,13 +108,24 @@ const HotelServices = () => {
                 reservationData.end_date
             );
     
-            // Imprimir la respuesta de la API
-            console.log("Respuesta de la API:", response);
-    
-            // Comprobar el statusCode en lugar de 'success'
-            if (response.statusCode === 200) {
-                console.log('Reserva creada con éxito:', response);
+            // Comprobar si la reserva fue creada correctamente
+            if (reservationResponse.statusCode === 200) {
+                console.log('Reserva creada con éxito:', reservationResponse);
                 alert('Reserva creada con éxito!');
+                
+                // Obtener el ID de la reserva creada
+                const reservationId = reservationResponse.body.reservation_id;
+
+                // Crear el pago para la reserva
+                const paymentResponse = await fetchCreatePayment(tenantId, userId, reservationId);
+
+                if (paymentResponse.statusCode === 200) {
+                    console.log('Pago creado con éxito:', paymentResponse);
+                    alert('Pago generado con éxito!');
+                } else {
+                    throw new Error('Hubo un problema al generar el pago');
+                }
+
                 // Redirigir al dashboard (ajusta la ruta según corresponda)
                 navigate('/dashboard'); // Redirige al dashboard donde se ven las habitaciones
             } else {
