@@ -4,17 +4,18 @@ import { Alert, Spinner } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 const RoomsList = () => {
-    const [rooms, setRooms] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [tenant_id, setTenantId] = useState(null);
+    const [rooms, setRooms] = useState([]);  // Estado para las habitaciones
+    const [loading, setLoading] = useState(true);  // Estado de carga
+    const [error, setError] = useState(null);  // Estado de error
+    const [tenant_id, setTenantId] = useState(null);  // Estado del tenant_id
 
     useEffect(() => {
+        // Obtén el tenant_id desde el localStorage
         const tenantIdFromStorage = localStorage.getItem('tenant_id');
         if (tenantIdFromStorage) {
-            setTenantId(tenantIdFromStorage);
+            setTenantId(tenantIdFromStorage);  // Establece el tenant_id
         } else {
-            setError('No se encontró el Tenant ID');
+            setError('No se encontró el Tenant ID');  // Si no se encuentra el tenant_id
             setLoading(false);
         }
     }, []);
@@ -23,18 +24,20 @@ const RoomsList = () => {
         if (tenant_id) {
             const fetchRooms = async () => {
                 try {
-                    const data = await fetchRoomsByTenant(tenant_id);
-                    setRooms(data.body.rooms);
+                    const data = await fetchRoomsByTenant(tenant_id);  // Llamamos a la API para obtener las habitaciones
+                    // Filtrar las habitaciones para solo mostrar las disponibles
+                    const availableRooms = data.body.rooms.filter(room => room.availability === 'disponible');
+                    setRooms(availableRooms);  // Guardamos las habitaciones disponibles en el estado
                 } catch (error) {
-                    setError('Error al cargar las habitaciones.');
+                    setError('Error al cargar las habitaciones.');  // En caso de error
                 } finally {
-                    setLoading(false);
+                    setLoading(false);  // Terminamos de cargar
                 }
             };
 
-            fetchRooms();
+            fetchRooms();  // Llamamos a la función para obtener las habitaciones
         }
-    }, [tenant_id]);
+    }, [tenant_id]);  // Ejecutar cuando tenant_id cambie
 
     if (loading) {
         return (
@@ -54,7 +57,7 @@ const RoomsList = () => {
 
     return (
         <div className="container mx-auto p-6">
-            <h2 className="text-center text-2xl font-bold mb-6">Lista de Habitaciones</h2>
+            <h2 className="text-center text-2xl font-bold mb-6">Lista de Habitaciones Disponibles</h2>
             {rooms.length === 0 ? (
                 <Alert variant="info" className="text-center">No hay habitaciones disponibles.</Alert>
             ) : (
