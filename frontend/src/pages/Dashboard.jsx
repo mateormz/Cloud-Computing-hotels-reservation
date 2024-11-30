@@ -66,20 +66,31 @@ const Dashboard = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-100">
-            <div className="max-w-7xl mx-auto p-6">
-                {/* Título y descripción del primer hotel en la lista (si existe) */}
-                <div className="text-center mb-12">
-                    <h1 className="text-3xl font-bold">{hotels[0].hotel_name}</h1> {/* Solo mostramos el primer hotel como ejemplo */}
-                    <p className="text-lg text-gray-600">{hotels[0].description}</p>
-                    <p className="text-md text-gray-500">{hotels[0].hotel_location}</p> {/* Ubicación del primer hotel */}
-                </div>
+      <div className="min-h-screen bg-gray-100">
+      <div className="max-w-7xl mx-auto p-6">
+          {/* Título y descripción del primer hotel en la lista (si existe) */}
+          <div className="text-center mb-12">
+              <h1 className="text-3xl font-bold">{hotels[0].hotel_name}</h1>
+              <p className="text-lg text-gray-600">{hotels[0].description}</p>
+              <p className="text-md text-gray-500">{hotels[0].hotel_location}</p> {/* Ubicación del primer hotel */}
 
-                {/* Sección para mostrar las habitaciones, aquí podrías iterar sobre los hoteles */}
-                <h2 className="text-center text-2xl font-bold mb-6">Encuentra la habitación perfecta!</h2>
-                <RoomsList/>
-            </div>
-        </div>
+              {/* Agregamos la imagen del hotel */}
+              {hotels[0].image && (
+                  <div className="mt-4">
+                      <img
+                          src={hotels[0].image} // URL de la imagen del hotel
+                          alt={`Imagen de ${hotels[0].hotel_name}`}
+                          className="w-full max-w-md mx-auto rounded-lg shadow-md"
+                      />
+                  </div>
+              )}
+          </div>
+
+          {/* Sección para mostrar las habitaciones */}
+          <h2 className="text-center text-2xl font-bold mb-6">Encuentra la habitación perfecta!</h2>
+          <RoomsList />
+      </div>
+    </div>
     );
 };
 

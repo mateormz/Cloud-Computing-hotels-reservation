@@ -59,6 +59,18 @@ const RoomDetail = () => {
     return (
         <div className="container mx-auto p-6">
             <h2 className="text-center text-2xl font-bold mb-6">{room.room_name}</h2>
+            
+            {/* Mostrar la imagen de la habitación si existe */}
+            {room.image && (
+                <div className="text-center mb-6">
+                    <img
+                        src={room.image} // Suponemos que room.image contiene la URL de la imagen
+                        alt={`Imagen de ${room.room_name}`}
+                        className="w-full max-w-md mx-auto rounded-lg shadow-md"
+                    />
+                </div>
+            )}
+            
             <p><strong>Tipo de habitación:</strong> {room.room_type}</p>
             <p><strong>Capacidad máxima:</strong> {room.max_persons} personas</p>
             <p><strong>Precio por noche:</strong> ${room.price_per_night}</p>

@@ -61,15 +61,27 @@ const RoomsList = () => {
                 <ul className="space-y-4">
                     {rooms.map((room, index) => (
                         <li key={index} className="p-4 bg-white shadow-md rounded-lg">
-                            <h3 className="text-lg font-semibold">
-                                <Link to={`/room/${room.room_id}`} className="text-blue-500 hover:underline">
-                                    {room.room_name}
-                                </Link>
-                            </h3>
-                            <p><strong>Tipo de habitación:</strong> {room.room_type}</p>
-                            <p><strong>Capacidad máxima:</strong> {room.max_persons} personas</p>
-                            <p><strong>Precio por noche:</strong> ${room.price_per_night}</p>
-                            <p><strong>Disponibilidad:</strong> {room.availability}</p>
+                            <div className="flex items-center space-x-4">
+                                {/* Mostrar la imagen de la habitación */}
+                                {room.image && (
+                                    <img
+                                        src={room.image}
+                                        alt={`Imagen de ${room.room_name}`}
+                                        className="w-32 h-32 object-cover rounded-lg"
+                                    />
+                                )}
+                                <div>
+                                    <h3 className="text-lg font-semibold">
+                                        <Link to={`/room/${room.room_id}`} className="text-blue-500 hover:underline">
+                                            {room.room_name}
+                                        </Link>
+                                    </h3>
+                                    <p><strong>Tipo de habitación:</strong> {room.room_type}</p>
+                                    <p><strong>Capacidad máxima:</strong> {room.max_persons} personas</p>
+                                    <p><strong>Precio por noche:</strong> ${room.price_per_night}</p>
+                                    <p><strong>Disponibilidad:</strong> {room.availability}</p>
+                                </div>
+                            </div>
                         </li>
                     ))}
                 </ul>
