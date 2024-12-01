@@ -27,12 +27,6 @@ const NavBar = () => {
                             <li>
                                 <Link to="/profile" className="text-black hover:text-gray-500">Profile</Link>
                             </li>
-                            <li>
-                                <Link to="/reservations" className="text-black hover:text-gray-500">Reservas</Link>
-                            </li>
-                            <li>
-                                <Link to="/payments" className="text-black hover:text-gray-500">Pagos</Link>
-                            </li>
                         </>
                     )}
                 </ul>
