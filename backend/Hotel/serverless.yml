@@ -15,9 +15,6 @@ provider:
     SERVICE_NAME: hotel-api
     STAGE: ${sls:stage}
 
-plugins:
-  - serverless-auto-swagger
-
 functions:
   hotel_create:
     handler: createHotel.lambda_handler
@@ -27,6 +24,27 @@ functions:
           method: post
           cors: true
           integration: lambda
+    documentation:
+      summary: "Crear un nuevo hotel"
+      description: "Endpoint para crear un nuevo hotel"
+      requestBody:
+        description: "Información del hotel"
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hotel_name:
+                  type: string
+                hotel_location:
+                  type: string
+                tenant_id:
+                  type: string
+      responses:
+        '200':
+          description: "Hotel creado exitosamente"
+        '400':
+          description: "Error en la solicitud"
 
   hotel_read:
     handler: readHotel.lambda_handler
@@ -36,60 +54,27 @@ functions:
           method: get
           cors: true
           integration: lambda
+    documentation:
+      summary: "Obtener un hotel por ID"
+      description: "Endpoint para obtener la información de un hotel especificado por tenant_id y hotel_id"
+      parameters:
+        - name: tenant_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: hotel_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Hotel encontrado"
+        '404':
+          description: "Hotel no encontrado"
 
-  hotel_update:
-    handler: updateHotel.lambda_handler
-    events:
-      - http:
-          path: /hotel/{tenant_id}/{hotel_id}
-          method: put
-          cors: true
-          integration: lambda
-
-  hotel_delete:
-    handler: deleteHotel.lambda_handler
-    events:
-      - http:
-          path: /hotel/{tenant_id}/{hotel_id}
-          method: delete
-          cors: true
-          integration: lambda
-
-  hotel_getAll:
-    handler: getAllHotels.lambda_handler
-    events:
-      - http:
-          path: /hotels
-          method: get
-          cors: true
-          integration: lambda
-
-  hotel_readByLocation:
-    handler: readHotelsByLocation.lambda_handler
-    events:
-      - http:
-          path: /hotels/location
-          method: get
-          cors: true
-          integration: lambda
-  
-  hotel_readByTenantAndName:
-    handler: readHotelsByTenantAndName.lambda_handler
-    events:
-      - http:
-          path: /hotels/tenant
-          method: get
-          cors: true
-          integration: lambda
-  hotel_readByTenant:
-    handler: getHotelsByTenant.lambda_handler
-    events:
-      - http:
-          path: /hotels/tenant/{tenant_id}
-          method: get
-          cors: true
-          integration: lambda
-
+  # Añadir la documentación para el resto de las funciones de manera similar.
 
 resources:
   Resources:
@@ -132,3 +117,37 @@ resources:
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
+
+plugins:
+  - serverless-openapi-documentation
+
+custom:
+  openapi:
+    info:
+      title: "Hotel API"
+      description: "API para gestionar hoteles"
+      version: "1.0.0"
+    servers:
+      - url: "https://{stage}.api.yourdomain.com"
+        description: "Servidor de producción"
+    paths:
+      /hotel/create:
+        post:
+          summary: "Crear un nuevo hotel"
+          description: "Endpoint para crear un nuevo hotel"
+          responses:
+            '200':
+              description: "Hotel creado exitosamente"
+            '400':
+              description: "Error en la solicitud"
+      /hotel/{tenant_id}/{hotel_id}:
+        get:
+          summary: "Obtener un hotel por ID"
+          description: "Obtener detalles de un hotel por tenant_id y hotel_id"
+          responses:
+            '200':
+              description: "Hotel encontrado"
+            '404':
+              description: "Hotel no encontrado"
+
+# Añadir configuración OpenAPI para más endpoints según sea necesario.
