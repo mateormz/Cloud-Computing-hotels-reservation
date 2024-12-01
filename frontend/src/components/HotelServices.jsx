@@ -71,6 +71,10 @@ const HotelServices = () => {
             const tenantId = localStorage.getItem('tenant_id');
             const userId = localStorage.getItem('user_id');
     
+            // Imprimir los datos obtenidos del localStorage
+            console.log("Tenant ID:", tenantId);
+            console.log("User ID:", userId);
+    
             // Verificar si faltan datos importantes para la creación de la reserva
             if (!tenantId || !userId || selectedServices.length === 0 || !isValidDateRange() || !roomId) {
                 throw new Error('Faltan datos para crear la reserva o las fechas son inválidas');
@@ -115,17 +119,20 @@ const HotelServices = () => {
                 
                 // Obtener el ID de la reserva creada
                 const reservationId = reservationResponse.body.reservation_id;
-
+    
+                // Imprimir el reservationId obtenido
+                console.log("Reservation ID:", reservationId);
+    
                 // Crear el pago para la reserva
                 const paymentResponse = await fetchCreatePayment(tenantId, userId, reservationId);
-
+    
                 if (paymentResponse.statusCode === 200) {
                     console.log('Pago creado con éxito:', paymentResponse);
                     alert('Pago generado con éxito!');
                 } else {
                     throw new Error('Hubo un problema al generar el pago');
                 }
-
+    
                 // Redirigir al dashboard (ajusta la ruta según corresponda)
                 navigate('/dashboard'); // Redirige al dashboard donde se ven las habitaciones
             } else {
@@ -139,6 +146,7 @@ const HotelServices = () => {
             setIsSubmitting(false);  // Al final de la ejecución, desactivamos el estado de "enviando reserva"
         }
     };
+    
 
     if (loading) {
         return (
