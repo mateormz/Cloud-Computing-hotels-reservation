@@ -1,11 +1,11 @@
-org: mateormz
+org: ${env:ORG}
 service: service-api
 
 provider:
   name: aws
   runtime: nodejs22.x
   iam:
-    role: arn:aws:iam::637423324074:role/LabRole
+    role: ${env:LAB_ROLE}
   memorySize: 1024
   timeout: 30
   environment:
