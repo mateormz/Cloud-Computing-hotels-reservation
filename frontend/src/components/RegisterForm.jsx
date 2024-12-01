@@ -18,12 +18,17 @@ const RegisterForm = () => {
         try {
             const response = await fetchRegister(tenant_id, name, email, password);
             localStorage.setItem('user_id', response.body.user_id);
-            localStorage.setItem('token', response.body.user_id);
+            localStorage.setItem('token', response.body.user_id); // Deberías almacenar el token aquí
             console.log(response);
+            navigate('/dashboard'); // Redirige al dashboard o a una página que quieras mostrar después del registro exitoso
         } catch (error) {
             console.log(error);
             setError('Error durante el registro');
         }
+    };
+
+    const handleLoginRedirect = () => {
+        navigate('/login'); // Redirige a la página de login
     };
 
     return (
@@ -39,6 +44,7 @@ const RegisterForm = () => {
                             value={tenant_id}
                             onChange={(e) => setTenant_id(e.target.value)}
                             className="border border-gray-300 rounded-lg p-2 w-full"
+                            required
                         />
                     </Form.Group>
 
@@ -50,6 +56,7 @@ const RegisterForm = () => {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="border border-gray-300 rounded-lg p-2 w-full"
+                            required
                         />
                     </Form.Group>
 
@@ -61,17 +68,19 @@ const RegisterForm = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="border border-gray-300 rounded-lg p-2 w-full"
+                            required
                         />
                     </Form.Group>
 
                     <Form.Group className="mb-4" controlId="password">
-                        <Form.Label className="block mb-2 font-medium">Password</Form.Label>
+                        <Form.Label className="block mb-2 font-medium">Contraseña</Form.Label>
                         <Form.Control
                             type="password"
                             placeholder="Ingresa tu contraseña"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="border border-gray-300 rounded-lg p-2 w-full"
+                            required
                         />
                     </Form.Group>
 
@@ -83,6 +92,16 @@ const RegisterForm = () => {
                 </Form>
 
                 {error && <Alert variant="danger" className="mt-4">{error}</Alert>}
+
+                {/* Botón para redirigir al login si ya tiene cuenta */}
+                <div className="mt-4 text-center">
+                    <Button
+                        variant="link"
+                        onClick={handleLoginRedirect}
+                        className="text-blue-500 hover:underline">
+                        ¿Ya tienes cuenta? Inicia sesión aquí
+                    </Button>
+                </div>
             </div>
         </div>
     );
