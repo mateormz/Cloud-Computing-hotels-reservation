@@ -20,6 +20,26 @@ export const fetchRegister = async (tenant_id, nombre, email, password) => {
     return response.data;
 };
 
+export const fetchGetUser = async (tenant_id, user_id) => {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('Token no disponible');
+        }
+
+        const config = { headers: { Authorization: token } };
+        const data = { tenant_id, user_id };
+
+        const response = await axios.post(`${USER_API}/getUser`, data, config);
+
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error al obtener los datos del usuario:", error);
+        throw error;
+    }
+};
+
 // ROOMS
 
 export const fetchRoomsByTenant = async (tenant_id) => {
@@ -215,6 +235,24 @@ export const fetchCreatePayment = async (tenant_id, user_id, reservation_id) => 
         return response.data;
     } catch (error) {
         console.error("Error al crear el pago:", error);
+        throw error;
+    }
+};
+
+export const fetchPaymentsByUser = async (tenant_id, user_id) => {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('Token no disponible');
+        }
+
+        const config = { headers: { Authorization: token } };
+        const response = await axios.get(`${PAYMENT_API}/payments/${tenant_id}/${user_id}`, config);
+
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error al obtener los pagos del usuario:", error);
         throw error;
     }
 };

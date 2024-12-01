@@ -4,11 +4,11 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Room from './pages/Room';
 import NavBar from './components/NavBar';
-import Profile from './pages/Profile';  // Asegúrate de tener este componente
 import Reservations from './pages/Reservations';  // Asegúrate de tener este componente
 import Payments from './pages/Payments';  // Asegúrate de tener este componente
 import Footer from './components/Footer'
 import Start from './pages/Start'
+import User from './pages/User';
 
 function App() {
   return (
@@ -20,7 +20,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/room/:roomId" element={<Room />} />
-          <Route path="/profile" element={<Profile />} /> {/* Ruta para el perfil */}
+          <Route path="/profile" element={<User />} /> {/* Ruta para el perfil */}
           <Route path="/reservations" element={<Reservations />} /> {/* Ruta para reservas */}
           <Route path="/payments" element={<Payments />} /> {/* Ruta para pagos */}
           <Route path="/" element={<Dashboard />} /> {/* Ruta por defecto */}
