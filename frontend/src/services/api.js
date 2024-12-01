@@ -1,12 +1,12 @@
 import axios from "axios";
 
-const USER_API = 'https://6oqpnht6zi.execute-api.us-east-1.amazonaws.com/test/user';
-const ROOM_API = 'https://ktyesl3kg7.execute-api.us-east-1.amazonaws.com/test';
-const COMMENT_API = 'https://ii6ix4n1g4.execute-api.us-east-1.amazonaws.com/test';
-const SERVICE_API = 'https://sf1s0wmjq6.execute-api.us-east-1.amazonaws.com/test';
-const HOTEL_API = 'https://nl1h1pg0ei.execute-api.us-east-1.amazonaws.com/test';
-const RESERVATION_API = 'https://ylf9s61dk3.execute-api.us-east-1.amazonaws.com/test';
-const PAYMENT_API = 'https://ixyiyeeye0.execute-api.us-east-1.amazonaws.com/test';
+const USER_API = 'https://nfyj33eqnf.execute-api.us-east-1.amazonaws.com/prod/user';
+const ROOM_API = 'https://7uwspsso1a.execute-api.us-east-1.amazonaws.com/prod';
+const COMMENT_API = 'https://8slzt9pnx5.execute-api.us-east-1.amazonaws.com/prod';
+const SERVICE_API = ' https://ltiwzy7lp8.execute-api.us-east-1.amazonaws.com/prod';
+const HOTEL_API = 'https://ui1g2dcdv0.execute-api.us-east-1.amazonaws.com/prod';
+const RESERVATION_API = 'https://x9mzygiisi.execute-api.us-east-1.amazonaws.com/prod';
+const PAYMENT_API = 'https://67ekwrx740.execute-api.us-east-1.amazonaws.com/prod';
 
 // USER
 
