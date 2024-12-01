@@ -36,21 +36,32 @@ const LoginForm = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        setError('');
-        setLoading(true);
-
+        setError('');  // Limpiar errores previos
+        setLoading(true);  // Establecer carga
+    
         try {
+            // Llamada a la API de login
             const response = await fetchLogin(tenant_id, email, password);
+    
+            // Verificar el código de estado de la respuesta
+            if (response.statusCode !== 200) {
+                // Si no es un código 200, consideramos que hubo un error (como 403)
+                throw new Error(response.body.error || 'Error desconocido');
+            }
+    
+            // Si la respuesta es exitosa (200), guardar datos en localStorage
             localStorage.setItem('tenant_id', tenant_id);
             localStorage.setItem('user_id', response.body.user_id);
             localStorage.setItem('token', response.body.token);
+    
             console.log('Login exitoso:', response);
-            navigate('/dashboard');
+            navigate('/dashboard');  // Redirigir al dashboard
         } catch (error) {
+            // Manejar errores en el catch
             console.error('Error durante el login:', error);
-            setError('Credenciales incorrectas o error del servidor');
+            setError(error.message || 'Credenciales incorrectas o error del servidor');
         } finally {
-            setLoading(false);
+            setLoading(false);  // Finalizar el estado de carga
         }
     };
 

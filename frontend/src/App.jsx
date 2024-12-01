@@ -7,6 +7,7 @@ import NavBar from './components/NavBar';
 import Footer from './components/Footer'
 import Start from './pages/Start'
 import User from './pages/User';
+import Navigate from 'navigate';
 
 function App() {
   return (
@@ -19,7 +20,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/room/:roomId" element={<Room />} />
           <Route path="/profile" element={<User />} /> {/* Ruta para el perfil */}
-          <Route path="/" element={<Dashboard />} /> {/* Ruta por defecto */}
+          <Route path="/" element={<Start/>}/>
           <Route path="/home" element={<Start/>}/>
         </Routes>
         <Footer></Footer>
