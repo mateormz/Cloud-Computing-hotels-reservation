@@ -10,12 +10,11 @@ const RoomsList = () => {
     const [tenant_id, setTenantId] = useState(null);  // Estado del tenant_id
 
     useEffect(() => {
-        // Obtén el tenant_id desde el localStorage
         const tenantIdFromStorage = localStorage.getItem('tenant_id');
         if (tenantIdFromStorage) {
-            setTenantId(tenantIdFromStorage);  // Establece el tenant_id
+            setTenantId(tenantIdFromStorage);
         } else {
-            setError('No se encontró el Tenant ID');  // Si no se encuentra el tenant_id
+            setError('No se encontró el Tenant ID');
             setLoading(false);
         }
     }, []);
@@ -24,20 +23,19 @@ const RoomsList = () => {
         if (tenant_id) {
             const fetchRooms = async () => {
                 try {
-                    const data = await fetchRoomsByTenant(tenant_id);  // Llamamos a la API para obtener las habitaciones
-                    // Filtrar las habitaciones para solo mostrar las disponibles
+                    const data = await fetchRoomsByTenant(tenant_id);
                     const availableRooms = data.body.rooms.filter(room => room.availability === 'disponible');
-                    setRooms(availableRooms);  // Guardamos las habitaciones disponibles en el estado
+                    setRooms(availableRooms);
                 } catch (error) {
-                    setError('Error al cargar las habitaciones.');  // En caso de error
+                    setError('Error al cargar las habitaciones.');
                 } finally {
-                    setLoading(false);  // Terminamos de cargar
+                    setLoading(false);
                 }
             };
 
-            fetchRooms();  // Llamamos a la función para obtener las habitaciones
+            fetchRooms();
         }
-    }, [tenant_id]);  // Ejecutar cuando tenant_id cambie
+    }, [tenant_id]);
 
     if (loading) {
         return (
@@ -57,33 +55,41 @@ const RoomsList = () => {
 
     return (
         <div className="container mx-auto p-6">
-            <h2 className="text-center text-2xl font-bold mb-6">Lista de Habitaciones Disponibles</h2>
+            {/* Título principal */}
+            <h1 className="text-4xl font-bold text-gray-900 text-left mb-4">Lista de Habitaciones Disponibles</h1>
+
+            {/* Subtítulo */}
+            <h2 className="text-lg font-light text-gray-600 text-left mb-8">
+                ¡Encuentra la habitación perfecta!
+            </h2>
+
+            {/* Habitaciones disponibles */}
             {rooms.length === 0 ? (
-                <Alert variant="info" className="text-center">No hay habitaciones disponibles.</Alert>
+                <Alert variant="info" className="text-center">No hay habitaciones disponibles en este momento.</Alert>
             ) : (
-                <ul className="space-y-4">
+                <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {rooms.map((room, index) => (
-                        <li key={index} className="p-4 bg-white shadow-md rounded-lg">
-                            <div className="flex items-center space-x-4">
-                                {/* Mostrar la imagen de la habitación */}
+                        <li key={index} className="bg-white shadow-md rounded-lg overflow-hidden transform hover:scale-105 transition-transform duration-300">
+                            <div className="relative">
                                 {room.image && (
                                     <img
                                         src={room.image}
                                         alt={`Imagen de ${room.room_name}`}
-                                        className="w-32 h-32 object-cover rounded-lg"
+                                        className="w-full h-40 object-cover rounded-t-lg"
                                     />
                                 )}
-                                <div>
-                                    <h3 className="text-lg font-semibold">
-                                        <Link to={`/room/${room.room_id}`} className="text-blue-500 hover:underline">
-                                            {room.room_name}
-                                        </Link>
-                                    </h3>
-                                    <p><strong>Tipo de habitación:</strong> {room.room_type}</p>
-                                    <p><strong>Capacidad máxima:</strong> {room.max_persons} personas</p>
-                                    <p><strong>Precio por noche:</strong> ${room.price_per_night}</p>
-                                    <p><strong>Disponibilidad:</strong> {room.availability}</p>
+                                <div className="absolute top-0 left-0 p-4 bg-black bg-opacity-50 text-white rounded-t-lg">
+                                    <h3 className="text-md font-semibold">{room.room_name}</h3>
                                 </div>
+                            </div>
+                            <div className="p-4">
+                                <p><strong>Tipo:</strong> {room.room_type}</p>
+                                <p><strong>Capacidad:</strong> {room.max_persons} personas</p>
+                                <p><strong>Precio:</strong> ${room.price_per_night} / noche</p>
+                                <p><strong>Disponibilidad:</strong> <span className={`font-semibold ${room.availability === 'disponible' ? 'text-green-500' : 'text-red-500'}`}>{room.availability}</span></p>
+                            </div>
+                            <div className="p-4 bg-gray-100 flex justify-between items-center">
+                                <Link to={`/room/${room.room_id}`} className="text-blue-500 hover:underline">Ver detalles</Link>
                             </div>
                         </li>
                     ))}

@@ -1,91 +1,68 @@
 import React, { useState, useEffect } from 'react';
-import { fetchServicesByTenant, fetchCreateReservation, fetchCreatePayment } from '../services/api'; // Asegúrate de importar fetchCreatePayment
-import { Spinner, Alert, Button, Form } from 'react-bootstrap'; // Usamos Spinner y Alert de react-bootstrap para la UI
-import { useParams, useNavigate } from 'react-router-dom'; // Importamos useNavigate
+import { fetchServicesByTenant, fetchCreateReservation, fetchCreatePayment } from '../services/api';
+import { Spinner, Alert } from 'react-bootstrap';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+    FaSwimmer, FaUtensils, FaSpa, FaDumbbell, FaCocktail, FaShuttleVan, FaCalendarAlt, FaTshirt,
+    FaHiking, FaChild, FaCar, FaWifi, FaFilm, FaBriefcase, FaGolfBall, FaTableTennis, FaWater,
+    FaRing, FaDog, FaHotTub, FaHeartbeat, FaShoppingCart, FaDice, FaBook, FaBicycle, FaChalkboardTeacher,
+    FaUmbrellaBeach, FaKey, FaConciergeBell
+} from "react-icons/fa";
 
 const HotelServices = () => {
-    const { roomId } = useParams(); // Extraemos roomId desde los params de la URL
-    const [services, setServices] = useState([]); // Estado para los servicios
-    const [loading, setLoading] = useState(true); // Estado de carga
-    const [error, setError] = useState(null); // Estado para manejar errores
-    const [selectedServices, setSelectedServices] = useState([]); // Servicios seleccionados por el usuario
-    const [startDate, setStartDate] = useState(''); // Fecha de inicio
-    const [endDate, setEndDate] = useState(''); // Fecha de fin
-    const [isSubmitting, setIsSubmitting] = useState(false);  // Estado para controlar si está enviando la solicitud
-    const navigate = useNavigate(); // Instancia de useNavigate para redirigir
+    const { roomId } = useParams();
+    const [services, setServices] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [selectedServices, setSelectedServices] = useState([]);
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const navigate = useNavigate();
 
-    // Cargar los servicios del hotel
     useEffect(() => {
         const loadServices = async () => {
             try {
-                const tenantId = localStorage.getItem('tenant_id'); // Obtenemos tenant_id del localStorage
-                if (!tenantId) {
-                    throw new Error('Tenant ID no disponible.');
-                }
+                const tenantId = localStorage.getItem('tenant_id');
+                if (!tenantId) throw new Error('Tenant ID no disponible.');
 
-                const fetchedServices = await fetchServicesByTenant(tenantId); // Llamamos a la API para obtener los servicios
-                setServices(fetchedServices.body.services); // Guardamos los servicios en el estado
+                const fetchedServices = await fetchServicesByTenant(tenantId);
+                setServices(fetchedServices.body.services);
             } catch (err) {
-                setError('Error al cargar los servicios.'); // Si hay un error, lo guardamos
+                setError('Error al cargar los servicios.');
             } finally {
-                setLoading(false); // Terminamos de cargar
+                setLoading(false);
             }
         };
 
-        loadServices(); // Ejecutamos la carga de servicios al montar el componente
-    }, []); // Solo ejecuta una vez cuando el componente se monta
+        loadServices();
+    }, []);
 
-    // Maneja la selección de servicios
     const handleServiceSelection = (serviceId) => {
-        setSelectedServices((prevSelected) => {
-            if (prevSelected.includes(serviceId)) {
-                return prevSelected.filter((id) => id !== serviceId); // Si ya está seleccionado, lo desmarcamos
-            } else {
-                return [...prevSelected, serviceId]; // Si no está seleccionado, lo agregamos
-            }
-        });
+        setSelectedServices((prevSelected) =>
+            prevSelected.includes(serviceId)
+                ? prevSelected.filter((id) => id !== serviceId)
+                : [...prevSelected, serviceId]
+        );
     };
 
-    // Función para validar el rango de fechas en formato YYYY-MM-DD
     const isValidDateRange = () => {
         const start = new Date(startDate);
         const end = new Date(endDate);
-
-        console.log("Fecha de inicio:", startDate);
-        console.log("Fecha de fin:", endDate);
-        
-        // Aseguramos que ambas fechas sean válidas
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-            console.error("Una o ambas fechas son inválidas.");
-            return false;
-        }
-
         return start < end;
     };
 
     const handleCreateReservation = async () => {
         try {
-            setIsSubmitting(true);  // Activamos el estado de "enviando reserva"
-            
-            // Obtener los datos del localStorage
+            setIsSubmitting(true);
+
             const tenantId = localStorage.getItem('tenant_id');
             const userId = localStorage.getItem('user_id');
-        
-            // Verificar si faltan datos importantes para la creación de la reserva
+
             if (!tenantId || !userId || selectedServices.length === 0 || !isValidDateRange() || !roomId) {
                 throw new Error('Faltan datos para crear la reserva o las fechas son inválidas');
             }
-        
-            // Imprimir los datos a la consola para depuración
-            console.log("Datos para la reserva:");
-            console.log("tenantId:", tenantId);
-            console.log("userId:", userId);
-            console.log("roomId:", roomId);
-            console.log("selectedServices:", selectedServices);
-            console.log("startDate:", startDate);
-            console.log("endDate:", endDate);
-        
-            // Crear los datos de la reserva
+
             const reservationData = {
                 tenant_id: tenantId,
                 user_id: userId,
@@ -94,11 +71,7 @@ const HotelServices = () => {
                 start_date: startDate,
                 end_date: endDate,
             };
-        
-            // Mostrar los datos de la reserva antes de enviarlos
-            console.log("Datos enviados a la API:", reservationData);
-        
-            // Llamar a la función para crear la reserva
+
             const reservationResponse = await fetchCreateReservation(
                 reservationData.tenant_id,
                 reservationData.user_id,
@@ -107,43 +80,47 @@ const HotelServices = () => {
                 reservationData.start_date,
                 reservationData.end_date
             );
-        
-            // Comprobar si la reserva fue creada correctamente
+
             if (reservationResponse.statusCode === 200) {
-                console.log('Reserva creada con éxito:', reservationResponse);
-                alert('Reserva creada con éxito!');
-                
-                // Obtener el ID de la reserva creada de la respuesta
-                const reservationId = reservationResponse.body.reservation.reservation_id; // Accedemos al reservation_id
-    
-                // Verifica que el reservation_id se haya asignado correctamente
-                console.log("reservation_id:", reservationId);
-    
-                if (!reservationId) {
-                    throw new Error('No se pudo obtener el reservation_id de la respuesta');
-                }
-    
-                // Crear el pago para la reserva
+                const reservationId = reservationResponse.body.reservation_id;
                 const paymentResponse = await fetchCreatePayment(tenantId, userId, reservationId);
-    
+
                 if (paymentResponse.statusCode === 200) {
-                    console.log('Pago creado con éxito:', paymentResponse);
-                    alert('Pago generado con éxito!');
+                    alert('Reserva y pago creados con éxito!');
+                    navigate('/dashboard');
                 } else {
                     throw new Error('Hubo un problema al generar el pago');
                 }
-    
-                // Redirigir al dashboard (ajusta la ruta según corresponda)
-                navigate('/dashboard'); // Redirige al dashboard donde se ven las habitaciones
             } else {
                 throw new Error('Hubo un problema al crear la reserva');
             }
         } catch (error) {
-            // Mostrar el error si ocurre
-            console.error("Error al crear la reserva:", error);
             alert(error.message || 'Error al crear la reserva');
         } finally {
-            setIsSubmitting(false);  // Al final de la ejecución, desactivamos el estado de "enviando reserva"
+            setIsSubmitting(false);
+        }
+    };
+
+    const getCategoryIcon = (category) => {
+        switch (category.toLowerCase()) {
+            case 'spa': return <FaSpa className="text-2xl text-blue-500" />;
+            case 'restaurante': return <FaUtensils className="text-2xl text-green-500" />;
+            case 'piscina': return <FaSwimmer className="text-2xl text-indigo-500" />;
+            case 'gym': return <FaDumbbell className="text-2xl text-orange-500" />;
+            case 'bar': return <FaCocktail className="text-2xl text-purple-500" />;
+            case 'transporte': return <FaShuttleVan className="text-2xl text-gray-500" />;
+            case 'eventos': return <FaCalendarAlt className="text-2xl text-red-500" />;
+            case 'lavandería': return <FaTshirt className="text-2xl text-blue-700" />;
+            case 'tours': return <FaHiking className="text-2xl text-green-700" />;
+            case 'kids club': return <FaChild className="text-2xl text-pink-500" />;
+            case 'parking': return <FaCar className="text-2xl text-gray-700" />;
+            case 'wi-fi': return <FaWifi className="text-2xl text-blue-400" />;
+            case 'cine': return <FaFilm className="text-2xl text-indigo-700" />;
+            case 'negocios': return <FaBriefcase className="text-2xl text-gray-900" />;
+            case 'golf': return <FaGolfBall className="text-2xl text-green-600" />;
+            case 'deportes acuáticos': return <FaWater className="text-2xl text-blue-600" />;
+            case 'mascotas': return <FaDog className="text-2xl text-brown-500" />;
+            default: return <FaConciergeBell className="text-2xl text-gray-500" />;
         }
     };
 
@@ -164,63 +141,59 @@ const HotelServices = () => {
     }
 
     return (
-        <div className="container mx-auto p-6 max-w-4xl">
-            <h2 className="text-center text-3xl font-bold mb-6 text-gray-800">Servicios del Hotel</h2>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <p className="text-lg text-gray-700 mb-6">
+                Selecciona los servicios que deseas añadir a tu reserva haciendo clic en ellos.
+            </p>
 
-            {/* Lista de servicios con opción para seleccionar */}
-            <ul className="space-y-4">
-                {services.length === 0 ? (
-                    <Alert variant="info" className="w-full text-center">No hay servicios disponibles para este hotel.</Alert>
-                ) : (
-                    services.map((service) => (
-                        <li key={service.service_id} className="p-4 bg-white shadow-md rounded-lg">
-                            <Form.Check
-                                type="checkbox"
-                                id={`service-${service.service_id}`}
-                                label={`${service.service_name} - $${service.precio}`}
-                                onChange={() => handleServiceSelection(service.service_id)}
-                                checked={selectedServices.includes(service.service_id)} // Marca el checkbox si el servicio está seleccionado
-                                className="text-lg font-semibold text-gray-700"
-                            />
-                            <p><strong>Categoría:</strong> {service.service_category}</p>
-                            <p>{service.descripcion}</p>
-                        </li>
-                    ))
-                )}
-            </ul>
-
-            {/* Campos para seleccionar fechas */}
-            <div className="my-6">
-                <Form.Label className="block text-lg font-medium text-gray-700">Fecha de Inicio</Form.Label>
-                <Form.Control
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    required
-                    className="mt-1 block w-full px-4 py-2 text-base border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {services.map((service) => (
+                    <div
+                        key={service.service_id}
+                        onClick={() => handleServiceSelection(service.service_id)}
+                        className={`p-4 rounded-lg shadow-md cursor-pointer flex flex-col items-center space-y-2 transition-all ${
+                            selectedServices.includes(service.service_id)
+                                ? 'bg-blue-100 border-blue-500'
+                                : 'bg-white border-gray-200'
+                        } border`}
+                    >
+                        {getCategoryIcon(service.service_category)}
+                        <h3 className="text-sm font-medium text-gray-800">{service.service_name}</h3>
+                        <p className="text-xs text-gray-600">{service.descripcion}</p>
+                        <p className="text-xs font-semibold">${service.precio}</p>
+                    </div>
+                ))}
             </div>
 
-            <div className="my-6">
-                <Form.Label className="block text-lg font-medium text-gray-700">Fecha de Fin</Form.Label>
-                <Form.Control
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    required
-                    className="mt-1 block w-full px-4 py-2 text-base border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-            </div>
+            <div className="mt-8 flex items-center space-x-6 justify-end">
+                <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio</label>
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                </div>
 
-            {/* Botón para crear la reserva */}
-            <Button
-                variant="success"
-                onClick={handleCreateReservation}
-                disabled={selectedServices.length === 0 || !startDate || !endDate || isSubmitting}  // Deshabilitar el botón mientras se está enviando la solicitud
-                className="w-full mt-6 py-3 text-lg font-semibold rounded-md shadow-lg bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-            >
-                {isSubmitting ? "Creando reserva..." : "Crear Reserva"}
-            </Button>
+                <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin</label>
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full px-4 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    />
+                </div>
+
+                <button
+                    onClick={handleCreateReservation}
+                    className="py-3 px-6 bg-blue-600 text-white text-lg font-medium rounded-md shadow-md hover:bg-blue-700 transition focus:ring-2 focus:ring-blue-500"
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? 'Creando...' : 'Reservar'}
+                </button>
+            </div>
         </div>
     );
 };

@@ -20,7 +20,6 @@ const Dashboard = () => {
         const getHotelsInfo = async () => {
             try {
                 const data = await fetchHotelByTenant(tenant_id); // Cambiamos la función para obtener todos los hoteles
-                console.log(data)
                 setHotels(data.body.hotels); // Guardamos la lista de hoteles en el estado
             } catch (err) {
                 setError('Hubo un error al obtener la información de los hoteles');
@@ -37,7 +36,7 @@ const Dashboard = () => {
         return (
             <div className="min-h-screen bg-gray-100 flex justify-center items-center">
                 <div className="text-center">
-                    <p className="text-xl font-semibold">Cargando información de los hoteles...</p>
+                    <p className="text-xl font-semibold text-gray-600">Cargando información de los hoteles...</p>
                 </div>
             </div>
         );
@@ -48,7 +47,7 @@ const Dashboard = () => {
         return (
             <div className="min-h-screen bg-gray-100 flex justify-center items-center">
                 <div className="text-center text-red-500">
-                    <p className="text-xl font-semibold">{ }</p>
+                    <p className="text-xl font-semibold">{error}</p>
                 </div>
             </div>
         );
@@ -59,38 +58,65 @@ const Dashboard = () => {
         return (
             <div className="min-h-screen bg-gray-100 flex justify-center items-center">
                 <div className="text-center">
-                    <p className="text-xl font-semibold">No se encontraron hoteles para este tenant.</p>
+                    <p className="text-xl font-semibold text-gray-600">No se encontraron hoteles para este tenant.</p>
                 </div>
             </div>
         );
     }
 
     return (
-      <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto p-6">
-          {/* Título y descripción del primer hotel en la lista (si existe) */}
-          <div className="text-center mb-12">
-              <h1 className="text-3xl font-bold">{hotels[0].hotel_name}</h1>
-              <p className="text-lg text-gray-600">{hotels[0].description}</p>
-              <p className="text-md text-gray-500">{hotels[0].hotel_location}</p> {/* Ubicación del primer hotel */}
+        <div className="min-h-screen bg-white">
+            <div className="max-w-7xl mx-auto p-6">
+                {/* Sección del hotel */}
+                <div className="relative">
+                    {/* Imagen del hotel */}
+                    {hotels[0].image && (
+                        <img
+                            src={hotels[0].image}
+                            alt={`Imagen de ${hotels[0].hotel_name}`}
+                            className="w-full h-96 object-cover rounded-lg shadow-lg"
+                        />
+                    )}
 
-              {/* Agregamos la imagen del hotel */}
-              {hotels[0].image && (
-                  <div className="mt-4">
-                      <img
-                          src={hotels[0].image} // URL de la imagen del hotel
-                          alt={`Imagen de ${hotels[0].hotel_name}`}
-                          className="w-full max-w-md mx-auto rounded-lg shadow-md"
-                      />
-                  </div>
-              )}
-          </div>
+                    {/* Título del hotel sobre la imagen */}
+                    <div className="absolute top-12 left-12 text-white bg-black bg-opacity-50 px-6 py-4 rounded-md w-full sm:w-auto">
+                        <h1 className="text-4xl sm:text-5xl font-serif font-bold">{hotels[0].hotel_name}</h1>
+                    </div>
+                </div>
 
-          {/* Sección para mostrar las habitaciones */}
-          <h2 className="text-center text-2xl font-bold mb-6">Encuentra la habitación perfecta!</h2>
-          <RoomsList />
-      </div>
-    </div>
+                {/* Descripción del hotel */}
+                <div className="bg-white shadow-lg rounded-lg overflow-hidden p-6 mt-12">
+                    <p className="text-lg text-gray-700 mb-4">{hotels[0].description}</p>
+                    <p className="text-md text-gray-500">{hotels[0].hotel_location}</p> {/* Ubicación del primer hotel */}
+                </div>
+
+                {/* Sección de habitaciones */}
+                <div className="text-center mt-12">
+                    <RoomsList />
+                </div>
+
+                {/* Lista de otros hoteles */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
+                    {hotels.slice(1).map((hotel) => (
+                        <div key={hotel.hotel_id} className="bg-white shadow-lg rounded-lg overflow-hidden">
+                            <img
+                                src={hotel.image || 'https://via.placeholder.com/500'}
+                                alt={`Imagen de ${hotel.hotel_name}`}
+                                className="w-full h-48 object-cover"
+                            />
+                            <div className="p-4">
+                                <h3 className="text-xl font-serif font-semibold text-gray-800">{hotel.hotel_name}</h3>
+                                <p className="text-gray-600 mt-2">{hotel.description}</p>
+                                <p className="text-gray-500 mt-1">{hotel.hotel_location}</p>
+                                <button className="mt-4 w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    Ver habitaciones
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
     );
 };
 

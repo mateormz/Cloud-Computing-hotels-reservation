@@ -54,6 +54,10 @@ const LoginForm = () => {
         }
     };
 
+    const handleRegisterRedirect = () => {
+        navigate('/register'); // Redirige a la página de registro
+    };
+
     return (
         <div className="flex justify-center items-center min-h-screen bg-gray-100">
             <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
@@ -110,6 +114,16 @@ const LoginForm = () => {
                 </Form>
 
                 {error && <Alert variant="danger" className="mt-4">{error}</Alert>}
+
+                {/* Botón para redirigir a la página de registro */}
+                <div className="mt-4 text-center">
+                    <Button 
+                        variant="link" 
+                        onClick={handleRegisterRedirect} 
+                        className="text-blue-500 hover:underline">
+                        ¿No tienes una cuenta? Regístrate aquí
+                    </Button>
+                </div>
             </div>
         </div>
     );
