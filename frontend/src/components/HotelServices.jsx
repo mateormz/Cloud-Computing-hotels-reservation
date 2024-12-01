@@ -55,14 +55,22 @@ const HotelServices = () => {
     const handleCreateReservation = async () => {
         try {
             setIsSubmitting(true);
-
+            
             const tenantId = localStorage.getItem('tenant_id');
             const userId = localStorage.getItem('user_id');
-
+        
             if (!tenantId || !userId || selectedServices.length === 0 || !isValidDateRange() || !roomId) {
                 throw new Error('Faltan datos para crear la reserva o las fechas son inválidas');
             }
-
+        
+            console.log("Datos para la reserva:");
+            console.log("tenantId:", tenantId);
+            console.log("userId:", userId);
+            console.log("roomId:", roomId);
+            console.log("selectedServices:", selectedServices);
+            console.log("startDate:", startDate);
+            console.log("endDate:", endDate);
+        
             const reservationData = {
                 tenant_id: tenantId,
                 user_id: userId,
@@ -71,7 +79,9 @@ const HotelServices = () => {
                 start_date: startDate,
                 end_date: endDate,
             };
-
+        
+            console.log("Datos enviados a la API:", reservationData);
+        
             const reservationResponse = await fetchCreateReservation(
                 reservationData.tenant_id,
                 reservationData.user_id,
@@ -80,26 +90,40 @@ const HotelServices = () => {
                 reservationData.start_date,
                 reservationData.end_date
             );
-
+        
             if (reservationResponse.statusCode === 200) {
-                const reservationId = reservationResponse.body.reservation_id;
+                console.log('Reserva creada con éxito:', reservationResponse);
+                alert('Reserva creada con éxito!');
+                
+                const reservationId = reservationResponse.body.reservation.reservation_id;
+    
+                console.log("reservation_id:", reservationId);
+    
+                if (!reservationId) {
+                    throw new Error('No se pudo obtener el reservation_id de la respuesta');
+                }
+    
                 const paymentResponse = await fetchCreatePayment(tenantId, userId, reservationId);
-
+    
                 if (paymentResponse.statusCode === 200) {
-                    alert('Reserva y pago creados con éxito!');
-                    navigate('/dashboard');
+                    console.log('Pago creado con éxito:', paymentResponse);
+                    alert('Pago generado con éxito!');
                 } else {
                     throw new Error('Hubo un problema al generar el pago');
                 }
+    
+                navigate('/dashboard');
             } else {
                 throw new Error('Hubo un problema al crear la reserva');
             }
         } catch (error) {
+            console.error("Error al crear la reserva:", error);
             alert(error.message || 'Error al crear la reserva');
         } finally {
             setIsSubmitting(false);
         }
     };
+    
 
     const getCategoryIcon = (category) => {
         switch (category.toLowerCase()) {
