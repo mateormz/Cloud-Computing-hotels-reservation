@@ -163,6 +163,24 @@ export const fetchAllHotels = async () => {
     }
 };
 
+export const fetchHotelsByLocation = async (hotel_location) => {
+    try {
+        const response = await axios.get(`${HOTEL_API}/hotels/location`, {
+            params: {
+                hotel_location
+            }
+        });
+
+        console.log(response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error al obtener los hoteles por ubicación:", error);
+        throw error;
+    }
+};
+
+// RESERVATION
+
 export const fetchCreateReservation = async (tenant_id, user_id, room_id, service_ids, start_date, end_date) => {
     try {
         const token = localStorage.getItem('token');
@@ -196,18 +214,28 @@ export const fetchCreateReservation = async (tenant_id, user_id, room_id, servic
     }
 };
 
-export const fetchHotelsByLocation = async (hotel_location) => {
+export const fetchReservationsByUser = async (tenant_id, user_id) => {
     try {
-        const response = await axios.get(`${HOTEL_API}/hotels/location`, {
-            params: {
-                hotel_location
-            }
-        });
+        const token = localStorage.getItem('token'); // Obtén el token del localStorage
+        if (!token) {
+            throw new Error('Token no disponible');
+        }
 
-        console.log(response.data);
-        return response.data;
+        const config = {
+            headers: {
+                Authorization: token, // Token en las cabeceras
+            },
+        };
+
+        const url = `${RESERVATION_API}/reservations/${tenant_id}/${user_id}`;
+        console.log("URL de la solicitud:", url);
+
+        const response = await axios.get(url, config);
+        console.log("Respuesta del API:", response.data);
+
+        return response.data; // Retorna los datos de las reservas
     } catch (error) {
-        console.error("Error al obtener los hoteles por ubicación:", error);
+        console.error("Error al obtener las reservas:", error);
         throw error;
     }
 };
