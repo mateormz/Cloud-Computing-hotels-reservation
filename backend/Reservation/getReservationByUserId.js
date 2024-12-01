@@ -74,37 +74,44 @@ exports.getReservationByUserId = async (event) => {
 
         console.log("Token validado correctamente.");
 
-        // Consulta en DynamoDB usando el índice global secundario (GSI)
-        console.log("Consultando reservas para tenant_id y user_id:", tenant_id, user_id);
+        // Escanear la tabla DynamoDB y filtrar manualmente por tenant_id y user_id
+        console.log("Escaneando reservas para tenant_id y user_id:", tenant_id, user_id);
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
-            IndexName: process.env.INDEXGSI1_RESERVATIONS, // Usar el índice GSI
-            KeyConditionExpression: "user_id = :user_id AND tenant_id = :tenant_id",
-            ExpressionAttributeValues: {
-                ":user_id": user_id,
-                ":tenant_id": tenant_id,
-            },
         };
-        console.log("Parámetros de consulta en DynamoDB:", JSON.stringify(params));
+        console.log("Parámetros de escaneo en DynamoDB:", JSON.stringify(params));
 
-        const reservationsResult = await dynamoDb.query(params).promise();
+        const scanResult = await dynamoDb.scan(params).promise();
 
-        if (!reservationsResult.Items || reservationsResult.Items.length === 0) {
-            console.warn("No se encontraron reservas para tenant_id y user_id:", tenant_id, user_id);
+        if (!scanResult.Items || scanResult.Items.length === 0) {
+            console.warn("No se encontraron reservas en la tabla.");
             return {
                 statusCode: 404,
                 body: { message: 'No se encontraron reservas para este tenant_id y user_id' }, // Respuesta como objeto
             };
         }
 
-        console.log("Reservas encontradas:", reservationsResult.Items);
+        // Filtrar las reservas por tenant_id y user_id
+        const filteredReservations = scanResult.Items.filter(
+            (item) => item.tenant_id === tenant_id && item.user_id === user_id
+        );
+
+        if (filteredReservations.length === 0) {
+            console.warn("No se encontraron reservas después de filtrar por tenant_id y user_id.");
+            return {
+                statusCode: 404,
+                body: { message: 'No se encontraron reservas para este tenant_id y user_id' }, // Respuesta como objeto
+            };
+        }
+
+        console.log("Reservas encontradas después de filtrar:", filteredReservations);
 
         // Preparar respuesta
         return {
             statusCode: 200,
             body: {
-                reservations: reservationsResult.Items, // Respuesta como objeto
+                reservations: filteredReservations, // Respuesta como objeto
             },
         };
     } catch (error) {
