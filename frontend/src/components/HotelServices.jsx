@@ -70,16 +70,12 @@ const HotelServices = () => {
             // Obtener los datos del localStorage
             const tenantId = localStorage.getItem('tenant_id');
             const userId = localStorage.getItem('user_id');
-    
-            // Imprimir los datos obtenidos del localStorage
-            console.log("Tenant ID:", tenantId);
-            console.log("User ID:", userId);
-    
+        
             // Verificar si faltan datos importantes para la creación de la reserva
             if (!tenantId || !userId || selectedServices.length === 0 || !isValidDateRange() || !roomId) {
                 throw new Error('Faltan datos para crear la reserva o las fechas son inválidas');
             }
-    
+        
             // Imprimir los datos a la consola para depuración
             console.log("Datos para la reserva:");
             console.log("tenantId:", tenantId);
@@ -88,7 +84,7 @@ const HotelServices = () => {
             console.log("selectedServices:", selectedServices);
             console.log("startDate:", startDate);
             console.log("endDate:", endDate);
-    
+        
             // Crear los datos de la reserva
             const reservationData = {
                 tenant_id: tenantId,
@@ -98,10 +94,10 @@ const HotelServices = () => {
                 start_date: startDate,
                 end_date: endDate,
             };
-    
+        
             // Mostrar los datos de la reserva antes de enviarlos
             console.log("Datos enviados a la API:", reservationData);
-    
+        
             // Llamar a la función para crear la reserva
             const reservationResponse = await fetchCreateReservation(
                 reservationData.tenant_id,
@@ -111,17 +107,21 @@ const HotelServices = () => {
                 reservationData.start_date,
                 reservationData.end_date
             );
-    
+        
             // Comprobar si la reserva fue creada correctamente
             if (reservationResponse.statusCode === 200) {
                 console.log('Reserva creada con éxito:', reservationResponse);
                 alert('Reserva creada con éxito!');
                 
-                // Obtener el ID de la reserva creada
-                const reservationId = reservationResponse.body.reservation_id;
+                // Obtener el ID de la reserva creada de la respuesta
+                const reservationId = reservationResponse.body.reservation.reservation_id; // Accedemos al reservation_id
     
-                // Imprimir el reservationId obtenido
-                console.log("Reservation ID:", reservationId);
+                // Verifica que el reservation_id se haya asignado correctamente
+                console.log("reservation_id:", reservationId);
+    
+                if (!reservationId) {
+                    throw new Error('No se pudo obtener el reservation_id de la respuesta');
+                }
     
                 // Crear el pago para la reserva
                 const paymentResponse = await fetchCreatePayment(tenantId, userId, reservationId);
@@ -146,6 +146,7 @@ const HotelServices = () => {
             setIsSubmitting(false);  // Al final de la ejecución, desactivamos el estado de "enviando reserva"
         }
     };
+    
     
 
     if (loading) {

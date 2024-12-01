@@ -1,12 +1,12 @@
 import axios from "axios";
 
-const USER_API = 'https://ljcjgxusik.execute-api.us-east-1.amazonaws.com/dev/user';
-const ROOM_API = 'https://0blrgyfec4.execute-api.us-east-1.amazonaws.com/dev';
+const USER_API = 'https://o8i8j2n3vj.execute-api.us-east-1.amazonaws.com/dev/user';
+const ROOM_API = 'https://y3z1dcl3bi.execute-api.us-east-1.amazonaws.com/dev';
 const COMMENT_API = 'https://euoupdyd66.execute-api.us-east-1.amazonaws.com/dev';
-const SERVICE_API = 'https://clpjdd1ile.execute-api.us-east-1.amazonaws.com/dev';
-const HOTEL_API = 'https://0ck0vy9zfg.execute-api.us-east-1.amazonaws.com/dev';
-const RESERVATION_API = 'https://8qvso8wf0g.execute-api.us-east-1.amazonaws.com/dev';
-const PAYMENT_API = 'https://mx68tmunkf.execute-api.us-east-1.amazonaws.com/dev';
+const SERVICE_API = 'https://oxyokl9fcj.execute-api.us-east-1.amazonaws.com/dev';
+const HOTEL_API = 'https://uz3dmwro1a.execute-api.us-east-1.amazonaws.com/dev';
+const RESERVATION_API = 'https://xilves4en1.execute-api.us-east-1.amazonaws.com/dev';
+const PAYMENT_API = 'https://djx90q4q18.execute-api.us-east-1.amazonaws.com/dev'; 
 
 // USER
 
