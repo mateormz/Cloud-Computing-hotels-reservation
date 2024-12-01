@@ -4,7 +4,7 @@ const lambda = new AWS.Lambda();
 
 exports.getReservationByUserId = async (event) => {
     try {
-        console.log("Evento recibido:", event); // Log del evento completo
+        console.log("Evento recibido:", JSON.stringify(event)); // Log del evento completo
 
         // Validación de token
         const token = event.headers?.Authorization;
@@ -16,8 +16,18 @@ exports.getReservationByUserId = async (event) => {
             };
         }
 
-        // Extraer user_id desde el path
+        // Extraer tenant_id y user_id desde el path
+        const tenant_id = event.path?.tenant_id;
         const user_id = event.path?.user_id;
+
+        if (!tenant_id) {
+            console.error("Error: tenant_id no proporcionado en la ruta.");
+            return {
+                statusCode: 400,
+                body: { error: 'El tenant_id es obligatorio y no se proporcionó en la ruta' }, // Respuesta como objeto
+            };
+        }
+
         if (!user_id) {
             console.error("Error: user_id no proporcionado en la ruta.");
             return {
@@ -26,17 +36,17 @@ exports.getReservationByUserId = async (event) => {
             };
         }
 
-        console.log("Validando token para user_id:", user_id);
+        console.log("Validando token para tenant_id y user_id:", tenant_id, user_id);
 
         // Llamar a la función de validación del token
         const validateTokenFunctionName = `${process.env.SERVICE_NAME_USER}-${process.env.STAGE}-hotel_validateUserToken`;
         const tokenPayload = {
             body: {
                 token: token,
-                user_id: user_id,
+                tenant_id: tenant_id,
             },
         };
-        console.log("Payload enviado para validar token:", tokenPayload);
+        console.log("Payload enviado para validar token:", JSON.stringify(tokenPayload));
 
         const validateTokenResponse = await lambda
             .invoke({
@@ -47,7 +57,7 @@ exports.getReservationByUserId = async (event) => {
             .promise();
 
         const validateTokenBody = JSON.parse(validateTokenResponse.Payload);
-        console.log("Respuesta de validación del token:", validateTokenBody);
+        console.log("Respuesta de validación del token:", JSON.stringify(validateTokenBody));
 
         if (validateTokenBody.statusCode !== 200) {
             const parsedBody =
@@ -65,25 +75,26 @@ exports.getReservationByUserId = async (event) => {
         console.log("Token validado correctamente.");
 
         // Consulta en DynamoDB usando el índice global secundario (GSI)
-        console.log("Consultando reservas para user_id:", user_id);
+        console.log("Consultando reservas para tenant_id y user_id:", tenant_id, user_id);
 
         const params = {
             TableName: process.env.TABLE_RESERVATIONS,
             IndexName: process.env.INDEXGSI1_RESERVATIONS, // Usar el índice GSI
-            KeyConditionExpression: "user_id = :user_id",
+            KeyConditionExpression: "user_id = :user_id AND tenant_id = :tenant_id",
             ExpressionAttributeValues: {
                 ":user_id": user_id,
+                ":tenant_id": tenant_id,
             },
         };
-        console.log("Parámetros de consulta en DynamoDB:", params);
+        console.log("Parámetros de consulta en DynamoDB:", JSON.stringify(params));
 
         const reservationsResult = await dynamoDb.query(params).promise();
 
         if (!reservationsResult.Items || reservationsResult.Items.length === 0) {
-            console.warn("No se encontraron reservas para user_id:", user_id);
+            console.warn("No se encontraron reservas para tenant_id y user_id:", tenant_id, user_id);
             return {
                 statusCode: 404,
-                body: { message: 'No se encontraron reservas para este user_id' }, // Respuesta como objeto
+                body: { message: 'No se encontraron reservas para este tenant_id y user_id' }, // Respuesta como objeto
             };
         }
 
