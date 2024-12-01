@@ -62,6 +62,16 @@ functions:
           cors: true
           integration: lambda
 
+  reservation_getAllByUser:
+    handler: getReservationByUserId.getReservationByUserId
+    events:
+      - http:
+          path: /reservations/user/{user_id}
+          method: get
+          cors: true
+          integration: lambda
+
+
 resources:
   Resources:
     ReservationsTable:

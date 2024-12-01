@@ -28,7 +28,7 @@ const PaymentsList = () => {
             const fetchPayments = async () => {
                 try {
                     const data = await fetchPaymentsByUser(tenant_id, user_id); // Llamamos a la API
-                    setPayments(data.body.payments || []); // Asumimos que los pagos están en `data.body.payments`
+                    setPayments(data.body || []); // Asumimos que los pagos están en `data.body.payments`
                 } catch (error) {
                     setError('Error al cargar los pagos.');
                 } finally {
@@ -67,9 +67,9 @@ const PaymentsList = () => {
                         <li key={index} className="p-4 bg-white shadow-md rounded-lg">
                             <div>
                                 <p><strong>ID del Pago:</strong> {payment.payment_id}</p>
-                                <p><strong>Monto:</strong> ${payment.amount}</p>
-                                <p><strong>Fecha:</strong> {payment.date}</p>
+                                <p><strong>Monto:</strong> ${payment.monto_pago}</p>
                                 <p><strong>Estado:</strong> {payment.status}</p>
+                                <p><strong>Emitido:</strong> {payment.created_at}</p>
                             </div>
                         </li>
                     ))}
