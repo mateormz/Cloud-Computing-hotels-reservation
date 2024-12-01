@@ -15,6 +15,9 @@ provider:
     SERVICE_NAME: hotel-api
     STAGE: ${sls:stage}
 
+plugins:
+  - serverless-auto-swagger
+
 functions:
   hotel_create:
     handler: createHotel.lambda_handler

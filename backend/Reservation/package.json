@@ -9,6 +9,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "serverless-auto-swagger": "^3.0.0",
     "uuid": "^11.0.3"
   }
 }
