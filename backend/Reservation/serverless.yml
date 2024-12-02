@@ -1,0 +1,115 @@
+org: ${env:ORG}
+service: reservation-api
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  iam:
+    role: ${env:LAB_ROLE}
+  memorySize: 1024
+  timeout: 30
+  environment:
+    TABLE_RESERVATIONS: ${sls:stage}-hotel-reservations
+    INDEXLSI1_RESERVATIONS: tenant-start_date-index
+    INDEXGSI1_RESERVATIONS: user-start_date-index
+    SERVICE_NAME_USER: user-api
+    SERVICE_NAME_ROOM: room-api
+    STAGE: ${sls:stage}
+
+functions:
+  reservation_create:
+    handler: createReservation.createReservation
+    events:
+      - http:
+          path: /reservation/create
+          method: post
+          cors: true
+          integration: lambda
+
+  reservation_update:
+    handler: updateReservation.updateReservation
+    events:
+      - http:
+          path: /reservation/{tenant_id}/{reservation_id}
+          method: put
+          cors: true
+          integration: lambda
+
+  reservation_delete:
+    handler: deleteReservation.deleteReservation
+    events:
+      - http:
+          path: /reservation/{tenant_id}/{reservation_id}
+          method: delete
+          cors: true
+          integration: lambda
+
+  reservation_getById:
+    handler: getReservationById.getReservationById
+    events:
+      - http:
+          path: /reservation/{tenant_id}/{reservation_id}
+          method: get
+          cors: true
+          integration: lambda
+
+  reservation_getAllByTenant:
+    handler: getReservationByTenantId.getReservationByTenantId
+    events:
+      - http:
+          path: /reservations/{tenant_id}
+          method: get
+          cors: true
+          integration: lambda
+
+  reservation_getAllByUser:
+    handler: getReservationByUserId.getReservationByUserId
+    events:
+      - http:
+          path: /reservations/{tenant_id}/{user_id}
+          method: get
+          cors: true
+          integration: lambda
+
+
+resources:
+  Resources:
+    ReservationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_RESERVATIONS}
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: reservation_id
+            AttributeType: S
+          - AttributeName: start_date
+            AttributeType: S
+          - AttributeName: user_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH  # Partition key
+          - AttributeName: reservation_id
+            KeyType: RANGE  # Sort key
+        LocalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.INDEXLSI1_RESERVATIONS}
+            KeySchema:
+              - AttributeName: tenant_id
+                KeyType: HASH
+              - AttributeName: start_date
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.INDEXGSI1_RESERVATIONS}
+            KeySchema:
+              - AttributeName: user_id
+                KeyType: HASH
+              - AttributeName: start_date
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true

@@ -1,0 +1,114 @@
+org: ${env:ORG}
+service: service-api
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  iam:
+    role: ${env:LAB_ROLE}
+  memorySize: 1024
+  timeout: 30
+  environment:
+    TABLE_SERVICES: ${sls:stage}-hotel-services
+    INDEXLSI1_SERVICES: tenant-service_name-index
+    INDEXGSI1_SERVICES: category-index
+    SERVICE_NAME: service-api
+    STAGE: ${sls:stage}
+
+functions:
+  service_create:
+    handler: createService.handler
+    events:
+      - http:
+          path: /service/create
+          method: post
+          cors: true
+          integration: lambda
+
+  functions:
+  service_getById:
+    handler: getServiceById.handler
+    events:
+      - http:
+          path: /service/getById/{tenant_id}/{service_id}
+          method: get
+          cors: true
+          integration: lambda
+
+  service_update:
+    handler: updateService.handler
+    events:
+      - http:
+          path: /service/put/{tenant_id}/{service_id}
+          method: put
+          cors: true
+          integration: lambda
+
+  service_delete:
+    handler: deleteService.handler
+    events:
+      - http:
+          path: /service/delete/{tenant_id}/{service_id}
+          method: delete
+          cors: true
+          integration: lambda
+
+  service_getByTenant:
+    handler: getAllServicesByTenant.handler
+    events:
+      - http:
+          path: /services/getByTenant/{tenant_id}
+          method: get
+          cors: true
+          integration: lambda
+
+  service_getAllByCategory:
+    handler: getAllByCategory.handler
+    events:
+      - http:
+          path: /services/getByCategory/{tenant_id}
+          method: get
+          cors: true
+          integration: lambda
+
+resources:
+  Resources:
+    ServicesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_SERVICES}
+        AttributeDefinitions:
+          - AttributeName: tenant_id
+            AttributeType: S
+          - AttributeName: service_id
+            AttributeType: S
+          - AttributeName: service_name
+            AttributeType: S
+          - AttributeName: service_category
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tenant_id
+            KeyType: HASH
+          - AttributeName: service_id
+            KeyType: RANGE
+        LocalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.INDEXLSI1_SERVICES}
+            KeySchema:
+              - AttributeName: tenant_id
+                KeyType: HASH
+              - AttributeName: service_name
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.INDEXGSI1_SERVICES}
+            KeySchema:
+              - AttributeName: service_category
+                KeyType: HASH
+              - AttributeName: service_id
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
